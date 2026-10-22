@@ -1,0 +1,4 @@
+# Upstream history only (docs/AUDIT.md section 10). The file was deleted from
+# the hardened tree in 31641d5; history is not rewritten so the fork can
+# keep merging upstream. Add nothing else here without a reviewed reason.
+268237d9186582bdd66fec822308328a9490056b:haval-h6-mqtt/certs/gwm_general.key:private-key:1

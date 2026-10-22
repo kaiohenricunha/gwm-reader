@@ -1,0 +1,20 @@
+# Weekly version-update PRs. Nothing merges automatically: every update is
+# reviewed and merged by hand (there is no auto-merge workflow).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /haval-h6-mqtt
+    schedule: {interval: weekly}
+    groups:
+      npm: {patterns: ["*"]}
+  - package-ecosystem: docker
+    directory: /
+    schedule: {interval: weekly}
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: {interval: weekly}
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+    groups:
+      actions: {patterns: ["*"]}

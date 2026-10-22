@@ -1,0 +1,6 @@
+# pre-commit install  (then gitleaks scans every commit before it is made)
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks

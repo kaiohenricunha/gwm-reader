@@ -1,3 +1,5 @@
+"use strict";
+
 const sensorTopics = {
   2103010: {
     description: "Quilometragem Total",

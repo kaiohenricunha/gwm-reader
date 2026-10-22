@@ -1,3 +1,5 @@
+"use strict";
+
 
 const UserMessages = (type) => ({
         NO_ALERTS: type === "text" ? "Não há alertas neste momento." : "NO_ALERTS",
