@@ -66,5 +66,11 @@ const header =
   "# removing every button, switch, select, service call, the map/device\n" +
   "# tracker, the address sensor, the GWM iframe and the GWM image URL.\n" +
   "# Entity ids use VEHICLE_ID=h6; replace \"gwmbrasil_h6_\" if you chose another id.\n";
-fs.writeFileSync(dst, header + YAML.stringify(cleaned, { lineWidth: 0 }));
+// Render status_message parts as plain text: strip markdown/HTML characters
+// from every part, and never render an unknown record (audit run-1).
+const SAFE = "| regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '')";
+const body = YAML.stringify(cleaned, { lineWidth: 0 })
+  .replace(/\{\{ partes\[(\d)\] \}\}/g, (_, n) => `{{ partes[${n}] ${SAFE} }}`)
+  .replaceAll("• {{ item }}", "{# unknown record: not rendered #}");
+fs.writeFileSync(dst, header + body);
 console.log(JSON.stringify(stats));

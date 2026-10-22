@@ -38,6 +38,13 @@ const UserMessages = (type) => ({
         SERVICE_WITH_TOLERANCE: (tolerance) => type === "code" ? `SERVICE_WITH_TOLERANCE@${tolerance}` : `Veículo no limite para revisão. Restam ${tolerance} km antes da perda da garantia.`
 });
 
+// GWM values that enter the '@'/'|'-delimited status codes must be numbers, so
+// they cannot add records or markup (audit run-1).
+const num = (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : "?";
+};
+
 function getVehicleStatusHardAnalysis(content) {
         let statusMessage = [];
         const status = JSON.parse(content);
@@ -106,7 +113,7 @@ function getVehicleStatusHardAnalysis(content) {
                         if (tirePressure && tireTemperature) {
                                 const psiPressure = Math.floor(parseInt(tirePressure.value) * 0.145038);
                                 if (psiPressure < tirePressure.pressure_threshold_min || psiPressure > tirePressure.pressure_threshold_max) {
-                                        statusMessage.push(msgs.TIRE_PRESSURE(tirePressure.description, psiPressure, tireTemperature.value, tireTemperature.unit));
+                                        statusMessage.push(msgs.TIRE_PRESSURE(tirePressure.description, psiPressure, num(tireTemperature.value), tireTemperature.unit));
                                         tireAlertCount++;
                                 }
                         }

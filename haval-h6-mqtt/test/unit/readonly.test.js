@@ -49,4 +49,6 @@ test("the derived Home Assistant dashboard has no command, tracker, map or GWM e
     assert.doesNotMatch(dash, re);
   }
   assert.match(dash, /sensor\.gwmbrasil_h6_quilometragem_total/);
+  assert.doesNotMatch(dash, /\{\{ item \}\}/, "unknown status records must not be rendered");
+  assert.doesNotMatch(dash, /\{\{ partes\[\d\] \}\}/, "status record parts must be filtered");
 });

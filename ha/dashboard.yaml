@@ -878,25 +878,25 @@ views:
                   {% if codigo in textos %}
                   • {{ textos.get(codigo) }}
                   {% elif codigo == 'VEHICLE_CHARGING_TIME' and partes|length >= 2 %}
-                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] }}.
+                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}.
                   {% elif codigo == 'WINDOW_OPEN' and partes|length >= 2 %}
-                  • O {{ partes[1] }} está aberto.
+                  • O {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberto.
                   {% elif codigo == 'DOOR_OPEN' and partes|length >= 2 %}
-                  • A {{ partes[1] }} está aberta.
+                  • A {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberta.
                   {% elif codigo == 'TRUNK_OPEN' and partes|length >= 2 %}
-                  • O {{ partes[1] }} está aberto.
+                  • O {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberto.
                   {% elif codigo == 'BATTERY_12V_CRITICAL' and partes|length >= 2 %}
-                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] }}%. Ligue o motor o quanto antes.
+                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}%. Ligue o motor o quanto antes.
                   {% elif codigo == 'BATTERY_12V_ALERT' and partes|length >= 2 %}
-                  • 🟠 Atenção: bateria 12V em {{ partes[1] }}%.
+                  • 🟠 Atenção: bateria 12V em {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}%.
                   {% elif codigo == 'TIRE_PRESSURE' and partes|length >= 4 %}
-                  • A {{ partes[1] }} está em {{ partes[2] }} psi com temperatura de {{ partes[3] }}.
+                  • A {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está em {{ partes[2] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} psi com temperatura de {{ partes[3] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}.
                   {% elif codigo == 'TIRE_PRESSURE_DEFAULTS' and partes|length >= 3 %}
-                  • A pressão recomendada pela montadora é entre {{ partes[1] }} e {{ partes[2] }} psi.
+                  • A pressão recomendada pela montadora é entre {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} e {{ partes[2] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} psi.
                   {% elif codigo == 'SERVICE_WITH_TOLERANCE' and partes|length >= 2 %}
-                  • Veículo no limite para revisão. Restam {{ partes[1] }} km antes da perda da garantia.
+                  • Veículo no limite para revisão. Restam {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} km antes da perda da garantia.
                   {% else %}
-                  • {{ item }}
+                  {# unknown record: not rendered #}
                   {% endif %}
 
                 {% endfor %}
@@ -1552,25 +1552,25 @@ views:
                   {% if codigo in textos %}
                   • {{ textos.get(codigo) }}
                   {% elif codigo == 'VEHICLE_CHARGING_TIME' and partes|length >= 2 %}
-                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] }}.
+                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}.
                   {% elif codigo == 'WINDOW_OPEN' and partes|length >= 2 %}
-                  • O {{ partes[1] }} está aberto.
+                  • O {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberto.
                   {% elif codigo == 'DOOR_OPEN' and partes|length >= 2 %}
-                  • A {{ partes[1] }} está aberta.
+                  • A {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberta.
                   {% elif codigo == 'TRUNK_OPEN' and partes|length >= 2 %}
-                  • O {{ partes[1] }} está aberto.
+                  • O {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está aberto.
                   {% elif codigo == 'BATTERY_12V_CRITICAL' and partes|length >= 2 %}
-                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] }}%. Ligue o motor o quanto antes.
+                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}%. Ligue o motor o quanto antes.
                   {% elif codigo == 'BATTERY_12V_ALERT' and partes|length >= 2 %}
-                  • 🟠 Atenção: bateria 12V em {{ partes[1] }}%.
+                  • 🟠 Atenção: bateria 12V em {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}%.
                   {% elif codigo == 'TIRE_PRESSURE' and partes|length >= 4 %}
-                  • A {{ partes[1] }} está em {{ partes[2] }} psi com temperatura de {{ partes[3] }}.
+                  • A {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} está em {{ partes[2] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} psi com temperatura de {{ partes[3] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }}.
                   {% elif codigo == 'TIRE_PRESSURE_DEFAULTS' and partes|length >= 3 %}
-                  • A pressão recomendada pela montadora é entre {{ partes[1] }} e {{ partes[2] }} psi.
+                  • A pressão recomendada pela montadora é entre {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} e {{ partes[2] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} psi.
                   {% elif codigo == 'SERVICE_WITH_TOLERANCE' and partes|length >= 2 %}
-                  • Veículo no limite para revisão. Restam {{ partes[1] }} km antes da perda da garantia.
+                  • Veículo no limite para revisão. Restam {{ partes[1] | regex_replace('[^0-9A-Za-zÀ-ÿ .,°%:-]', '') }} km antes da perda da garantia.
                   {% else %}
-                  • {{ item }}
+                  {# unknown record: not rendered #}
                   {% endif %}
 
                 {% endfor %}
