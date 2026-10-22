@@ -1,0 +1,9 @@
+# Squid dstdomain allowlist for gwm-reader (one domain per line).
+#
+# PLACEHOLDERS ONLY. The owner fills in the real domains after a controlled
+# run (scripts/first-run.sh shows every CONNECT that was attempted), in
+# proxy/allowlist.local.txt, which is gitignored and mounted by
+# docker-compose.override.yml. Expected after review: the two GWM hosts
+# from docs/AUDIT.md section 1, and nothing else.
+placeholder-login-host.invalid
+placeholder-api-host.invalid

@@ -1,0 +1,21 @@
+# Copy to docker-compose.override.yml (gitignored) and fill in YOUR values.
+# Never commit the copy: it holds personal data.
+services:
+  gwm-reader:
+    environment:
+      # Only when the account has more than one vehicle. Personal data.
+      GWM_VIN: "TESTVIN9XK2PQ7RZ4"
+      # Do not set GWM_LIVE_ENABLED here: pass it on the command line for a
+      # deliberate run (scripts/first-run.sh), so it is never on by accident.
+      # Optional client certificate (docs/AUDIT.md section 8). Only after
+      # GWM authorization; never bundled or fetched by this project.
+      # GWM_CLIENT_CERT_FILE: /run/secrets/gwm_client_cert
+      # GWM_CLIENT_KEY_FILE: /run/secrets/gwm_client_key
+    # secrets: [gwm_username, gwm_password, mqtt_password, gwm_client_cert, gwm_client_key]
+  squid:
+    volumes:
+      # The reviewed allowlist (gitignored) replaces the placeholders.
+      - ./proxy/allowlist.local.txt:/etc/squid/allowlist.txt:ro
+# secrets:
+#   gwm_client_cert: {file: ./secrets/gwm_client_cert}
+#   gwm_client_key: {file: ./secrets/gwm_client_key}

@@ -1,0 +1,14 @@
+# gwm-reader publishes only. It has no read rule, so it cannot subscribe to
+# anything, including the Home Assistant topics. Discovery is retained.
+user gwm_reader
+topic write gwmbrasil/#
+topic write homeassistant/+/gwmbrasil/#
+
+# Home Assistant reads only.
+user homeassistant
+topic read gwmbrasil/#
+topic read homeassistant/#
+
+# Kinestra (or any downstream bridge) reads only the raw snapshots.
+user kinestra_bridge
+topic read gwmbrasil/+/snapshot

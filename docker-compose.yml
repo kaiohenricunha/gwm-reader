@@ -1,0 +1,113 @@
+# gwm-reader stack: the read-only reader, an egress proxy and an MQTT broker.
+#
+#   gwm-reader --(mqtt_internal, no internet)--> mosquitto
+#   gwm-reader --(mqtt_internal)--> squid --(egress)--> allowlisted HTTPS only
+#
+# Live mode is OFF unless GWM_LIVE_ENABLED=true (docs/RUNBOOK.md). Personal
+# values (VIN, the filled allowlist) go in docker-compose.override.yml,
+# which is gitignored. Always pass the project name: docker compose -p gwm-reader ...
+
+name: gwm-reader
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+
+services:
+  gwm-reader:
+    build: .
+    image: gwm-reader:local
+    <<: [*hardening, *logging]
+    # Exit 0 (live mode off, --reset-halt) must not loop; crashes restart.
+    restart: on-failure
+    user: "65532:65532"
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    environment:
+      GWM_LIVE_ENABLED: "${GWM_LIVE_ENABLED:-false}"
+      VEHICLE_ID: "${VEHICLE_ID:-h6}"
+      REFRESH_TIME: "300"
+      CHARGING_HISTORY_INTERVAL: "21600"
+      DEVICE_TRACKER_ENABLED: "false"
+      LOG_LEVEL: "INFO"
+      HTTPS_PROXY: "http://squid:3128"
+      MQTT_URL: "mqtt://mosquitto:1883"
+      MQTT_USERNAME: "gwm_reader"
+      DATA_DIR: "/data"
+      # Read from /run/secrets/<name> (Compose secrets below).
+    secrets: [gwm_username, gwm_password, mqtt_password]
+    volumes:
+      - reader-data:/data
+    networks: [mqtt_internal]
+    depends_on:
+      mosquitto: {condition: service_healthy}
+      squid: {condition: service_healthy}
+    deploy:
+      resources:
+        limits: {memory: 128m, cpus: "0.5"}
+
+  squid:
+    image: ubuntu/squid:6.6-24.04_edge@sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
+    <<: [*hardening, *logging]
+    user: "13:13"
+    entrypoint: ["/usr/sbin/squid", "-N", "-f", "/etc/squid/squid.conf"]
+    command: []
+    tmpfs:
+      - /tmp:size=16m,uid=13,gid=13,mode=0700
+      - /var/spool/squid:size=16m,uid=13,gid=13,mode=0700
+      - /run:size=1m,uid=13,gid=13,mode=0700
+    volumes:
+      - ./proxy/squid.conf:/etc/squid/squid.conf:ro
+      - ./proxy/allowlist.txt:/etc/squid/allowlist.txt:ro
+    networks: [mqtt_internal, egress]
+    healthcheck:
+      # A complete request, so the access_log "!healthcheck" ACL can drop it.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/3128 && printf 'GET http://127.0.0.1/ HTTP/1.0\\r\\n\\r\\n' >&3 && read -r l <&3 && [[ $$l == HTTP/1.* ]]"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    deploy:
+      resources:
+        limits: {memory: 128m, cpus: "0.5"}
+
+  mosquitto:
+    image: eclipse-mosquitto:2.1.2-alpine@sha256:38c0da4f2ef84284d47b3b3eeea1cb3bdeabe81ee10caf0cd5c5ff61ee3ea408
+    <<: [*hardening, *logging]
+    user: "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/acl:/mosquitto/config/acl:ro
+      - ./secrets/mosquitto_passwd:/mosquitto/secrets/passwd:ro
+      - mqtt-data:/mosquitto/data
+    networks: [mqtt_internal]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 1883"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    deploy:
+      resources:
+        limits: {memory: 64m, cpus: "0.5"}
+
+secrets:
+  gwm_username: {file: ./secrets/gwm_username}
+  gwm_password: {file: ./secrets/gwm_password}
+  mqtt_password: {file: ./secrets/mqtt_gwm_reader_password}
+
+volumes:
+  reader-data: {}
+  mqtt-data: {}
+
+networks:
+  # No external access: gwm-reader and mosquitto live only here.
+  mqtt_internal:
+    internal: true
+  # Only squid joins this network.
+  egress: {}

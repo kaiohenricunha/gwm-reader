@@ -1,0 +1,5 @@
+# Allowlist: only the production sources and the lockfile enter the build.
+*
+!haval-h6-mqtt/package.json
+!haval-h6-mqtt/package-lock.json
+!haval-h6-mqtt/*.js
