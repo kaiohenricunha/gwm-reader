@@ -1,3 +1,7 @@
+> **gwm-reader:** este é o README original do add-on, mantido só como referência e para facilitar o merge com o upstream.
+> O gwm-reader é **somente leitura**: não tem comandos, PIN, rastreamento por padrão nem geocodificação, e roda só via Docker Compose.
+> Leia o [README do gwm-reader](../README.md) e o [RUNBOOK](../docs/RUNBOOK.md). As instruções abaixo **não** se aplicam a este fork.
+
 # Home Assistant Community Add-on: GWM Brasil com MQTT
 
 ## Sobre

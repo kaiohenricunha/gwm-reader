@@ -42,3 +42,11 @@ test("the only non-GET methods in production code are the two allowlisted POSTs"
   for (const f of sources) for (const m of code(f).matchAll(/["'](POST|PUT|PATCH|DELETE)["']/g)) posts.push(`${f}:${m[1]}`);
   assert.deepEqual(posts.sort(), ["carConnector.js:POST", "carConnector.js:POST", "routes.js:POST", "routes.js:POST"]);
 });
+
+test("the derived Home Assistant dashboard has no command, tracker, map or GWM embed", () => {
+  const dash = fs.readFileSync(path.join(ROOT, "..", "ha", "dashboard.yaml"), "utf8").split("\n").filter((l) => !l.startsWith("#")).join("\n");
+  for (const re of [/\bbutton\./, /\bswitch\./, /\bselect\./, /\block\./, /call-service|perform-action|button\.press/, /device_tracker/, /type: (map|iframe)\b/, /gwmcloud\.com/, /endereco_atual|imagem_do_veiculo/, /VEICULO/]) {
+    assert.doesNotMatch(dash, re);
+  }
+  assert.match(dash, /sensor\.gwmbrasil_h6_quilometragem_total/);
+});

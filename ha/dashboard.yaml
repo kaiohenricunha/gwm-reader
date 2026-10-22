@@ -1,0 +1,1831 @@
+# Read-only Home Assistant dashboard for gwm-reader, derived from upstream
+# files/HomeAssistant_Dashboard_GWM.yaml (havaleiros, MIT) by
+# removing every button, switch, select, service call, the map/device
+# tracker, the address sensor, the GWM iframe and the GWM image URL.
+# Entity ids use VEHICLE_ID=h6; replace "gwmbrasil_h6_" if you chose another id.
+title: Haval H6 Dashboard
+views:
+  - type: panel
+    path: gwm-dashboard
+    title: GWM Dashboard
+    icon: mdi:car-electric
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - binary_sensor.gwmbrasil_h6_agendamento_de_carga
+          - binary_sensor.gwmbrasil_h6_estado_da_trava
+          - binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+          - binary_sensor.gwmbrasil_h6_estado_do_controle_de_carga
+          - binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar
+          - binary_sensor.gwmbrasil_h6_porta_dianteira_direita
+          - binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda
+          - binary_sensor.gwmbrasil_h6_porta_malas
+          - binary_sensor.gwmbrasil_h6_porta_traseira_direita
+          - binary_sensor.gwmbrasil_h6_porta_traseira_esquerda
+          - sensor.gwmbrasil_h6_autonomia_combustao
+          - sensor.gwmbrasil_h6_autonomia_ev
+          - sensor.gwmbrasil_h6_capacidade_do_tanque
+          - sensor.gwmbrasil_h6_cor_do_veiculo
+          - sensor.gwmbrasil_h6_estado_da_carga
+          - sensor.gwmbrasil_h6_estado_de_carga_12v
+          - sensor.gwmbrasil_h6_estado_de_carga_soc
+          - sensor.gwmbrasil_h6_estado_do_motor
+          - sensor.gwmbrasil_h6_modelo_do_veiculo
+          - sensor.gwmbrasil_h6_nivel_de_combustivel
+          - sensor.gwmbrasil_h6_posicao_do_teto_solar
+          - sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_direito
+          - sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_esquerdo
+          - sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_direito
+          - sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_esquerdo
+          - sensor.gwmbrasil_h6_quilometragem_total
+          - sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_direito
+          - sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_esquerdo
+          - sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_direito
+          - sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_esquerdo
+          - sensor.gwmbrasil_h6_tempo_de_carga
+          - sensor.gwmbrasil_h6_vidro_dianteiro_direito
+          - sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+          - sensor.gwmbrasil_h6_vidro_traseiro_direito
+          - sensor.gwmbrasil_h6_vidro_traseiro_esquerdo
+          - sensor.gwmbrasil_h6_status_message
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:stack-in-card
+              mode: horizontal
+              cards:
+                - type: custom:stack-in-card
+                  mode: vertical
+                  keep:
+                    background: false
+                    box_shadow: false
+                    border_radius: false
+                    margin: false
+                    outer_padding: false
+                  card_mod:
+                    style: |
+                      ha-card {
+                        background: rgba(0,0,0,0);
+                        border: 0px;
+                        box-shadow: 0px 0px rgba(0,0,0,0);
+                      }
+                  cards:
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_estado_da_carga
+                          state: "1"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/carga_carregando.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 1.1;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_estado_da_carga
+                          state: "5"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/carga_aguardando.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 1.1;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_estado_da_carga
+                          state: "4"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/carga_naocarregando.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 1.1;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: picture
+                      image: /local/images/haval_h6/h6.png
+                      tap_action:
+                        action: none
+                      hold_action:
+                        action: none
+                      card_mod:
+                        style: |
+                          :host {
+                            z-index: 3;
+                            position: relative;
+                          }
+                          ha-card {
+                            max-width: 441px;
+                            max-height: 400px;
+                            border: 0px;
+                            background: rgba(0,0,0,0);
+                          }
+                          img {
+                            max-width: 100%;
+                            max-height: 100%;
+                            object-fit: contain;
+                          }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/ac_direita.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/ac_esquerda.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_dianteira_direita
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_dianteira_direita_aberta.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_dianteira_direita
+                          state: off
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_dianteira_direita_fechada.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_dianteira_esquerda_aberta.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda
+                          state: off
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_dianteira_esquerda_fechada.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_malas
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_malas.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_traseira_direita
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_traseira_direita_aberta.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_traseira_direita
+                          state: off
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_traseira_direita_fechada.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_traseira_esquerda
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_traseira_esquerda_aberta.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_porta_traseira_esquerda
+                          state: off
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/porta_traseira_esquerda_fechada.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_posicao_do_teto_solar
+                          state_not: "3"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/teto_solar_aberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 4;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_estado_da_trava
+                          state: off
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/trava.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 2;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+                          state: on
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/ventilacao.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 5;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_dianteiro_direito
+                          state: "2"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_dianteiro_direito_aberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_dianteiro_direito
+                          state: "3"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_dianteiro_direito_entreaberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 5;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+                          state: "2"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_dianteiro_esquerdo_aberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+                          state: "3"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_dianteiro_esquerdo_entreaberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 5;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_traseiro_direito
+                          state: "2"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_traseiro_direito_aberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_traseiro_direito
+                          state: "3"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_traseiro_direito_entreaberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 5;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_traseiro_esquerdo
+                          state: "2"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_traseiro_esquerdo_aberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 6;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+                    - type: conditional
+                      conditions:
+                        - entity: sensor.gwmbrasil_h6_vidro_traseiro_esquerdo
+                          state: "3"
+                      card:
+                        type: picture
+                        image: /local/images/haval_h6/vidro_traseiro_esquerdo_entreaberto.png
+                        tap_action:
+                          action: none
+                        hold_action:
+                          action: none
+                        card_mod:
+                          style: |
+                            :host {
+                              position: absolute;
+                              top: 0;
+                              left: 0;
+                              z-index: 5;
+                            }
+                            ha-card {
+                              max-width: 441px;
+                              max-height: 400px;
+                              border: 0px;
+                              background: rgba(0,0,0,0);
+                            }
+                            img {
+                              max-width: 100%;
+                              max-height: 100%;
+                              object-fit: contain;
+                            }
+              card_mod:
+                style: |
+                  ha-card {
+                    display: flex;
+                    border: 0px;
+                    justify-content: center;
+                    align-items: center;
+                    background: none !important /*bg*/;
+                    border-radius: 6px;
+                  }
+            - type: markdown
+              content: |
+                {% set raw = states('sensor.gwmbrasil_h6_status_message') %}          {% if raw in ['unknown','unavailable','', None] %}
+                  {% set mensagens = [] %}
+                {% else %}
+                  {% set mensagens = raw.split('|') %}
+                {% endif %}
+                {% set textos = {
+                  "NO_ALERTS": "Não há alertas neste momento.",
+                  "ERR_FORMATTING_ADDRESS": "Erro ao formatar endereço.",
+                  "ERR_GENERATE_RESPONSE": "Desculpe, houve um erro ao gerar a resposta.",
+                  "ALERT_HIGH_VOLTAGE_DISCONNECT": "A bateria de alta tensão já está totalmente carregada. O carregador deve ser desconectado.",
+                  "SUNROOF_OPEN": "O teto solar está aberto.",
+                  "UNLOCKED": "A trava das portas não está acionada e o veículo pode ser aberto.",
+                  "ENGINE_ON_AND_UNLOCKED": "O motor está ligado e o veículo está destravado. Verifique se não foi esquecido ligado.",
+                  "FUEL_LOW": "Nível de combustível abaixo de 15 litros. Recomenda-se abastecer.",
+                  "AC_ON_WITH_ENGINE_OFF": "O ar-condicionado está ligado com o veículo desligado. Isso pode drenar a bateria de 12V.",
+                  "REVIEW_PREFIX": "Seu veículo está dentro do limite padrão de quilometragem para agendar a revisão."
+                } %}
+                {% for item in mensagens %}
+                  {% set partes = item.split('@') %}
+                  {% set codigo = partes[0] | trim %}
+                  {% if codigo in textos %}
+                  • {{ textos.get(codigo) }}
+                  {% elif codigo == 'VEHICLE_CHARGING_TIME' and partes|length >= 2 %}
+                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] }}.
+                  {% elif codigo == 'WINDOW_OPEN' and partes|length >= 2 %}
+                  • O {{ partes[1] }} está aberto.
+                  {% elif codigo == 'DOOR_OPEN' and partes|length >= 2 %}
+                  • A {{ partes[1] }} está aberta.
+                  {% elif codigo == 'TRUNK_OPEN' and partes|length >= 2 %}
+                  • O {{ partes[1] }} está aberto.
+                  {% elif codigo == 'BATTERY_12V_CRITICAL' and partes|length >= 2 %}
+                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] }}%. Ligue o motor o quanto antes.
+                  {% elif codigo == 'BATTERY_12V_ALERT' and partes|length >= 2 %}
+                  • 🟠 Atenção: bateria 12V em {{ partes[1] }}%.
+                  {% elif codigo == 'TIRE_PRESSURE' and partes|length >= 4 %}
+                  • A {{ partes[1] }} está em {{ partes[2] }} psi com temperatura de {{ partes[3] }}.
+                  {% elif codigo == 'TIRE_PRESSURE_DEFAULTS' and partes|length >= 3 %}
+                  • A pressão recomendada pela montadora é entre {{ partes[1] }} e {{ partes[2] }} psi.
+                  {% elif codigo == 'SERVICE_WITH_TOLERANCE' and partes|length >= 2 %}
+                  • Veículo no limite para revisão. Restam {{ partes[1] }} km antes da perda da garantia.
+                  {% else %}
+                  • {{ item }}
+                  {% endif %}
+
+                {% endfor %}
+              card_mod:
+                style: |
+                  ha-card {
+                    background: rgba(30, 35, 45, 0.4);
+                    backdrop-filter: blur(20px);
+                    border-radius: 6px;
+                    padding: 16px;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 14px;
+                    text-align: center;
+                    display: {% if states('sensor.gwmbrasil_h6_status_message') in
+                      ['NO_ALERTS','Não há alertas neste momento.','unknown','unavailable',''] %}
+                      none
+                    {% else %}
+                      block
+                    {% endif %} !important;
+                  }
+            - type: custom:button-card
+              name: Controles
+              icon: mdi:car-cog
+              show_name: true
+              show_icon: true
+              tap_action:
+                action: navigate
+                navigation_path: controles
+              card_mod:
+                style: |
+                  ha-card {
+                    background: none !important /*bg*/;
+                    border-radius: 6px;
+                    animation:pulse 2s infinite;
+                  }
+              styles:
+                icon:
+                  - width: 28px
+                name:
+                  - font-size: 14px
+            - type: custom:stack-in-card
+              mode: horizontal
+              cards:
+                - type: custom:mushroom-title-card
+                  title: '{{ states("sensor.gwmbrasil_h6_modelo_do_veiculo") }}'
+                  subtitle: '{{ states("sensor.gwmbrasil_h6_cor_do_veiculo") }}'
+                  title_tap_action:
+                    action: none
+                  subtitle_tap_action:
+                    action: none
+              card_mod:
+                style: |
+                  ha-card {
+                    display: flex;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    background: none !important /*bg*/;
+                    border-radius: 6px;
+                  }
+            - type: horizontal-stack
+              cards:
+                - type: custom:bar-card
+                  title: Bateria
+                  positions:
+                    icon: off
+                    name: off
+                  tap_action:
+                    action: more-info
+                  hold_action:
+                    action: none
+                  min: 0
+                  max: 100
+                  severity:
+                    - value: 0
+                      color: "#540000"
+                    - value: 50
+                      color: "#ffa200"
+                    - value: 100
+                      color: "#009c72"
+                  entities:
+                    - entity: sensor.gwmbrasil_h6_estado_de_carga_soc
+                  card_mod:
+                    style: |
+                      :host {
+                        {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                        {% if 'HEV' in modelo  or 'TANK' in modelo %}
+                          display: none
+                        {% endif %} !important;                
+                      }
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+                - type: custom:bar-card
+                  title: Combustível
+                  positions:
+                    icon: off
+                    name: off
+                  tap_action:
+                    action: more-info
+                  hold_action:
+                    action: none
+                  min: 0
+                  max: 60
+                  severity:
+                    - value: 0
+                      color: "#540000"
+                    - value: 30
+                      color: "#ffa200"
+                    - value: 55
+                      color: "#009c72"
+                  entities:
+                    - entity: sensor.gwmbrasil_h6_nivel_de_combustivel
+                  card_mod:
+                    style: |
+                      :host {
+                        {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                        {% if 'HAVAL' not in modelo %}
+                          display: none
+                        {% endif %} !important;
+                      }              
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+                - type: custom:bar-card
+                  title: Autonomia EV
+                  positions:
+                    icon: off
+                    name: off
+                  tap_action:
+                    action: more-info
+                  hold_action:
+                    action: none
+                  min: 0
+                  max: 100
+                  severity:
+                    - value: 0
+                      color: "#540000"
+                    - value: 50
+                      color: "#ffa200"
+                    - value: 100
+                      color: "#009c72"
+                  entities:
+                    - entity: sensor.gwmbrasil_h6_autonomia_ev
+                  card_mod:
+                    style: |
+                      :host {
+                        {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                        {% if 'TANK' not in modelo  %}
+                          display: none
+                        {% endif %} !important;
+                      }
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+                - type: custom:bar-card
+                  title: Autonomia Combustão
+                  positions:
+                    icon: off
+                    name: off
+                  tap_action:
+                    action: more-info
+                  hold_action:
+                    action: none
+                  min: 0
+                  max: 800
+                  severity:
+                    - value: 0
+                      color: "#540000"
+                    - value: 200
+                      color: "#ffa200"
+                    - value: 800
+                      color: "#009c72"
+                  entities:
+                    - entity: sensor.gwmbrasil_h6_autonomia_combustao
+                  card_mod:
+                    style: |
+                      :host {
+                        {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                        {% if 'TANK' not in modelo %}
+                          display: none
+                        {% endif %} !important;
+                      }
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+            - type: custom:collapsable-cards
+              title: Monitoramento dos pneus
+              defaultOpen: true
+              cards:
+                - type: vertical-stack
+                  cards:
+                    - type: horizontal-stack
+                      cards:
+                        - type: custom:mini-graph-card
+                          name: Dianteiro Esquerdo
+                          entities:
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_esquerdo
+                              name: Pressão
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_esquerdo
+                              name: Temperatura
+                              show_fill: false
+                          icon: mdi:arrow-top-left
+                          align_icon: left
+                          align_state: center
+                          hours_to_show: 48
+                          points_per_hour: 0.25
+                          tap_action:
+                            action: none
+                          hold_action:
+                            action: none
+                          show:
+                            fill: true
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+                        - type: custom:mini-graph-card
+                          name: Dianteiro Direito
+                          entities:
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_direito
+                              name: Pressão
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_direito
+                              name: Temperatura
+                              show_fill: false
+                          icon: mdi:arrow-top-right
+                          align_icon: left
+                          align_state: center
+                          hours_to_show: 48
+                          points_per_hour: 0.25
+                          tap_action:
+                            action: none
+                          hold_action:
+                            action: none
+                          show:
+                            fill: true
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+                        - type: custom:mini-graph-card
+                          name: Traseiro Esquerdo
+                          entities:
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_esquerdo
+                              name: Pressão
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_esquerdo
+                              name: Temperatura
+                              show_fill: false
+                          icon: mdi:arrow-bottom-left
+                          align_icon: left
+                          align_state: center
+                          hours_to_show: 48
+                          points_per_hour: 0.25
+                          tap_action:
+                            action: none
+                          hold_action:
+                            action: none
+                          show:
+                            fill: true
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+                        - type: custom:mini-graph-card
+                          name: Traseiro Direito
+                          entities:
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_direito
+                              name: Pressão
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_direito
+                              name: Temperatura
+                              show_fill: false
+                          icon: mdi:arrow-bottom-right
+                          align_icon: left
+                          align_state: center
+                          hours_to_show: 48
+                          points_per_hour: 0.25
+                          tap_action:
+                            action: none
+                          hold_action:
+                            action: none
+                          show:
+                            fill: true
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+            - type: custom:collapsable-cards
+              title: Autonomia e pneus
+              defaultOpen: true
+              cards:
+                - type: horizontal-stack
+                  cards:
+                    - type: vertical-stack
+                      cards:
+                        - type: entities
+                          entities:
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_estado_do_motor
+                              name: Estado do motor
+                              state: "${ states['sensor.gwmbrasil_h6_estado_do_motor'].state === '0' ? 'Desligado' : states['sensor.gwmbrasil_h6_estado_do_motor'].state === '1' ? 'Ligado' : 'Desconhecido'}"
+                            - entity: sensor.gwmbrasil_h6_quilometragem_total
+                              name: Quilometragem total
+                            - entity: sensor.gwmbrasil_h6_estado_de_carga_12v
+                              name: Estado de carga 12V
+                              secondary_info: last-updated
+                              state_color: true
+                              card_mod:
+                                style: |
+                                  :host {
+                                    {% if is_state('sensor.gwmbrasil_h6_estado_de_carga_12v','unknown') %} display: none !important {% endif %};
+                                  }
+                            - type: custom:template-entity-row
+                              name: Autonomia Total
+                              state: |-
+                                ${
+                                  parseFloat(states['sensor.gwmbrasil_h6_autonomia_combustao'].state) +
+                                  parseFloat(states['sensor.gwmbrasil_h6_autonomia_ev'].state) + " km"
+                                  ;
+                                }
+                              stateq: "{{ ( (states('sensor.gwmbrasil_h6_autonomia_combustao') | float(0)) + (states('sensor.gwmbrasil_h6_autonomia_ev') | float(0)) ) | round(2) }} km"
+                              icon: mdi:numeric
+                              card_mod:
+                                style: |
+                                  :host {
+                                    {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                                    {% if 'PHEV' not in modelo %}
+                                      display: none
+                                    {% endif %} !important;
+                                  }
+                            - entity: sensor.gwmbrasil_h6_autonomia_combustao
+                              name: Autonomia Combustão
+                              card_mod:
+                                style: |
+                                  :host {
+                                    {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                                    {% if 'ORA' in modelo %}
+                                      display: none
+                                    {% endif %} !important;
+                                  }
+                                  ha-card {
+                                    border-width: 0px !important;
+                                    background: none
+                                  }
+                            - entity: sensor.gwmbrasil_h6_nivel_de_combustivel
+                              name: Nível de combustível
+                              card_mod:
+                                style: |
+                                  :host {
+                                    {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                                    {% if 'HAVAL' not in modelo %}
+                                      display: none
+                                    {% endif %} !important;
+                                  }
+                                  ha-card {
+                                    border-width: 0px !important;
+                                    background: none
+                                  }
+                            - entity: sensor.gwmbrasil_h6_autonomia_ev
+                              name: Autonomia EV
+                            - entity: sensor.gwmbrasil_h6_estado_de_carga_soc
+                              name: Estado de carga (SoC)
+                              state_color: true
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_estado_da_carga
+                              name: Estado de Carregamento
+                              state: "${ states['sensor.gwmbrasil_h6_estado_da_carga'].state === '0' ? 'Desconectado' : states['sensor.gwmbrasil_h6_estado_da_carga'].state === '1' ? 'Carregando' : states['sensor.gwmbrasil_h6_estado_da_carga'].state === '2' ? 'Programado' : states['sensor.gwmbrasil_h6_estado_da_carga'].state === '3' ? 'Finalizado' : states['sensor.gwmbrasil_h6_estado_da_carga'].state === '5' ? 'Aguardando liberação' : 'Desconhecido' }"
+                            - entity: binary_sensor.gwmbrasil_h6_agendamento_de_carga
+                              name: Agendamento de carga
+                              state: "${ states['binary_sensor.gwmbrasil_h6_agendamento_de_carga'].state === 'off' ? 'Sem agendamento' : states['binary_sensor.gwmbrasil_h6_agendamento_de_carga'].state === 'on' ? 'Carregamento programado' : 'Desconhecido'}"
+                              card_mod:
+                                style: |
+                                  :host {
+                                    display: {% if is_state('sensor.gwmbrasil_h6_agendamento_de_carga','on') %} block {% else %} none {% endif %};
+                                  }
+                            - entity: sensor.gwmbrasil_h6_tempo_de_carga
+                              name: Tempo de carga
+                              card_mod:
+                                style: |
+                                  :host {
+                                    display: {% if is_state('sensor.gwmbrasil_h6_estado_da_carga','1') %} block {% else %} none {% endif %};
+                                  }
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+                    - type: vertical-stack
+                      cards:
+                        - type: entities
+                          entities:
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_esquerdo
+                              name: Pressão do Pneu Dianteiro Esquerdo
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_esquerdo
+                              name: Temperatura do Pneu Dianteiro Esquerdo
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_direito
+                              name: Pressão do Pneu Dianteiro Direito
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_direito
+                              name: Temperatura do Pneu Dianteiro Direito
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_esquerdo
+                              name: Pressão do Pneu Traseiro Esquerdo
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_esquerdo
+                              name: Temperatura do Pneu Traseiro Esquerdo
+                            - entity: sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_direito
+                              name: Pressão do Pneu Traseiro Direito
+                            - entity: sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_direito
+                              name: Temperatura do Pneu Traseiro Direito
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+              card_mod:
+                style: |
+                  ha-card {
+                    border-width: 5px !important;
+                    background: none
+                  }
+            - type: custom:collapsable-cards
+              title: Climatização
+              defaultOpen: true
+              cards:
+                - type: entities
+                  entities:
+                    - entity: sensor.gwmbrasil_h6_temperatura_da_cabine
+                      name: Temperatura da cabine
+                    - type: custom:template-entity-row
+                      entity: binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+                      name: Ar Condicionado
+                      state: "${ states['binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado'].state === 'off' ? 'Desligado' : states['binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado'].state === 'on' ? 'Ligado' : 'Desconhecido'}"
+                    - type: custom:template-entity-row
+                      entity: binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar
+                      name: Purificador de ar
+                      state: "${ states['binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar'].state === 'off' ? 'Desligado' : states['binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar'].state === 'on' ? 'Ligado' : 'Desconhecido'}"
+                      card_mod:
+                        style: |
+                          :host {
+                            {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                            {% if 'TANK' in modelo %}
+                              display: none
+                            {% endif %} !important;
+                          }              
+                  card_mod:
+                    style: |
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+                - type: entities
+                  entities:
+                    - entity: binary_sensor.gwmbrasil_h6_aquecimento_da_cabine
+                      name: Aquecimento da cabine
+                    - entity: binary_sensor.gwmbrasil_h6_aquecimento_do_banco_do_motorista
+                      name: Aquecimento do banco do motorista
+                    - entity: binary_sensor.gwmbrasil_h6_aquecimento_do_banco_do_passageiro
+                      name: Aquecimento do banco do passageiro
+                    - entity: binary_sensor.gwmbrasil_h6_aquecimento_do_volante
+                      name: Aquecimento do banco do volante
+                  card_mod:
+                    style: |
+                      :host {
+                        {% set modelo = states('sensor.gwmbrasil_h6_modelo_do_veiculo').split(' ') %}
+                        {% if 'TANK' not in modelo %}
+                          display: none
+                        {% endif %} !important;
+                      }
+                      ha-card {
+                        background: none !important /*bg*/;
+                        border-radius: 6px;
+                      }
+            - type: custom:collapsable-cards
+              title: Portas e vidros
+              defaultOpen: true
+              cards:
+                - type: horizontal-stack
+                  cards:
+                    - type: entities
+                      entities:
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_estado_da_trava
+                          name: Trava das portas
+                          color: "${ states['binary_sensor.gwmbrasil_h6_estado_da_trava'].state === 'on' ? 'red' : '' }"
+                          icon: "${ states['binary_sensor.gwmbrasil_h6_estado_da_trava'].state === 'off' ? 'mdi:car-door-lock' : states['binary_sensor.gwmbrasil_h6_estado_da_trava'].state === 'on' ? 'mdi:car-door-lock-open' : 'mdi:cloud-question' }"
+                          state: "${ states['binary_sensor.gwmbrasil_h6_estado_da_trava'].state === 'off' ? 'Trancada' : states['binary_sensor.gwmbrasil_h6_estado_da_trava'].state === 'on' ? 'Destrancada' : 'Desconhecido'}"
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda
+                          name: Dianteira esquerda
+                          color: "${ states['binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda'].state === 'on' ? 'red' : '' }"
+                          state: "${ states['binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda'].state === 'off' ? 'Fechada' : states['binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda'].state === 'on' ? 'Aberta' : 'Desconhecido'}"
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_porta_dianteira_direita
+                          name: Dianteira direita
+                          color: "${ states['binary_sensor.gwmbrasil_h6_porta_dianteira_direita'].state === 'on' ? 'red' : '' }"
+                          state: "${ states['binary_sensor.gwmbrasil_h6_porta_dianteira_direita'].state === 'off' ? 'Fechada' : states['binary_sensor.gwmbrasil_h6_porta_dianteira_direita'].state === 'on' ? 'Aberta' : 'Desconhecido'}                "
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_porta_traseira_esquerda
+                          name: Traseira esquerda
+                          color: "${ states['binary_sensor.gwmbrasil_h6_porta_traseira_esquerda'].state === 'on' ? 'red' : '' }"
+                          state: "${ states['binary_sensor.gwmbrasil_h6_porta_traseira_esquerda'].state === 'off' ? 'Fechada' : states['binary_sensor.gwmbrasil_h6_porta_traseira_esquerda'].state === 'on' ? 'Aberta' : 'Desconhecido'}"
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_porta_traseira_direita
+                          name: Traseira direita
+                          color: "${ states['binary_sensor.gwmbrasil_h6_porta_traseira_direita'].state === 'on' ? 'red' : '' }"
+                          state: "${ states['binary_sensor.gwmbrasil_h6_porta_traseira_direita'].state === 'off' ? 'Fechada' : states['binary_sensor.gwmbrasil_h6_porta_traseira_direita'].state === 'on' ? 'Aberta' : 'Desconhecido'}"
+                        - type: custom:template-entity-row
+                          entity: binary_sensor.gwmbrasil_h6_porta_malas
+                          name: Porta malas
+                          state: "${ states['binary_sensor.gwmbrasil_h6_porta_malas'].state === 'off' ? 'Fechado' : states['binary_sensor.gwmbrasil_h6_porta_malas'].state === 'on' ? 'Aberto' : 'Desconhecido'}"
+                      state_color: false
+                      card_mod:
+                        style: |
+                          ha-card {
+                            background: none !important /*bg*/;
+                            border-radius: 6px;
+                          }
+                    - type: vertical-stack
+                      cards:
+                        - type: entities
+                          entities:
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+                              name: Dianteiro esquerdo
+                              color: "${ states['sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo'].state !== '1' ? 'red' : '' }"
+                              state: "${ states['sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo'].state === '1' ? 'Fechado' : states['sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo'].state === '2' ? 'Aberto' : states['sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo'].state === '3' ? 'Entreaberto' : 'Desconhecido' }"
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_vidro_dianteiro_direito
+                              name: Dianteiro direito
+                              color: "${ states['sensor.gwmbrasil_h6_vidro_dianteiro_direito'].state !== '1' ? 'red' : '' }"
+                              state: "${ states['sensor.gwmbrasil_h6_vidro_dianteiro_direito'].state === '1' ? 'Fechado' : states['sensor.gwmbrasil_h6_vidro_dianteiro_direito'].state === '2' ? 'Aberto' : states['sensor.gwmbrasil_h6_vidro_dianteiro_direito'].state === '3' ? 'Entreaberto' : 'Desconhecido' }"
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_vidro_traseiro_esquerdo
+                              name: Traseiro esquerdo
+                              color: "${ states['sensor.gwmbrasil_h6_vidro_traseiro_esquerdo'].state !== '1' ? 'red' : '' }"
+                              state: "${ states['sensor.gwmbrasil_h6_vidro_traseiro_esquerdo'].state === '1' ? 'Fechado' : states['sensor.gwmbrasil_h6_vidro_traseiro_esquerdo'].state === '2' ? 'Aberto' : states['sensor.gwmbrasil_h6_vidro_traseiro_esquerdo'].state === '3' ? 'Entreaberto' : 'Desconhecido' }"
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_vidro_traseiro_direito
+                              name: Traseiro direito
+                              color: "${ states['sensor.gwmbrasil_h6_vidro_traseiro_direito'].state !== '1' ? 'red' : '' }"
+                              state: "${ states['sensor.gwmbrasil_h6_vidro_traseiro_direito'].state === '1' ? 'Fechado' : states['sensor.gwmbrasil_h6_vidro_traseiro_direito'].state === '2' ? 'Aberto' : states['sensor.gwmbrasil_h6_vidro_traseiro_direito'].state === '3' ? 'Entreaberto' : 'Desconhecido' }"
+                          card_mod:
+                            style: |
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+                        - type: entities
+                          entities:
+                            - type: custom:template-entity-row
+                              entity: sensor.gwmbrasil_h6_posicao_do_teto_solar
+                              name: Teto Solar
+                              state: "${ states['sensor.gwmbrasil_h6_posicao_do_teto_solar'].state === '3' ? 'Fechado' : 'Aberto'}"
+                            - type: custom:bar-card
+                              entity: sensor.gwmbrasil_h6_posicao_do_teto_solar
+                              name: Teto Solar
+                              tap_action:
+                                action: none
+                              hold_action:
+                                action: none
+                              min: 0
+                              max: 100
+                              unit_of_measurement: "%"
+                              severity:
+                                - value: 0
+                                  color: "#009c72"
+                                - value: 50
+                                  color: "#ffa200"
+                                - value: 100
+                                  color: "#540000"
+                              card_mod:
+                                style: |
+                                  :host {
+                                    display: {% if is_state('sensor.gwmbrasil_h6_posicao_do_teto_solar','3') %} none {% elif states('sensor.gwmbrasil_h6_posicao_do_teto_solar') is none %} none {% else %} block {% endif %};
+                                  }
+                                  ha-card {
+                                    border-width: 0px !important;
+                                    background: none;
+                                  }
+                          card_mod:
+                            style: |
+                              :host {
+                                {% if is_state('sensor.gwmbrasil_h6_posicao_do_teto_solar','unknown') %} display: none !important {% endif %};
+                              }
+                              ha-card {
+                                background: none !important /*bg*/;
+                                border-radius: 6px;
+                              }
+            - type: conditional
+              conditions: []
+              card:
+                type: custom:collapsable-cards
+                title: Mapa
+                defaultOpen: true
+                cards: []
+  - type: panel
+    path: controles
+    title: Controles
+    icon: mdi:camera-control
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - binary_sensor.gwmbrasil_h6_estado_da_trava
+          - binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado
+          - binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar
+          - binary_sensor.gwmbrasil_h6_porta_dianteira_direita
+          - binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda
+          - binary_sensor.gwmbrasil_h6_porta_malas
+          - binary_sensor.gwmbrasil_h6_porta_traseira_direita
+          - binary_sensor.gwmbrasil_h6_porta_traseira_esquerda
+          - sensor.gwmbrasil_h6_estado_do_motor
+          - sensor.gwmbrasil_h6_status_message
+          - sensor.gwmbrasil_h6_posicao_do_teto_solar
+          - sensor.gwmbrasil_h6_vidro_dianteiro_direito
+          - sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+          - sensor.gwmbrasil_h6_vidro_traseiro_direito
+          - sensor.gwmbrasil_h6_vidro_traseiro_esquerdo
+        card:
+          type: vertical-stack
+          cards:
+            - type: markdown
+              content: |
+                {% set raw = states('sensor.gwmbrasil_h6_status_message') %}          {% if raw in ['unknown','unavailable','', None] %}
+                  {% set mensagens = [] %}
+                {% else %}
+                  {% set mensagens = raw.split('|') %}
+                {% endif %}
+                {% set textos = {
+                  "NO_ALERTS": "Não há alertas neste momento.",
+                  "ERR_FORMATTING_ADDRESS": "Erro ao formatar endereço.",
+                  "ERR_GENERATE_RESPONSE": "Desculpe, houve um erro ao gerar a resposta.",
+                  "ALERT_HIGH_VOLTAGE_DISCONNECT": "A bateria de alta tensão já está totalmente carregada. O carregador deve ser desconectado.",
+                  "SUNROOF_OPEN": "O teto solar está aberto.",
+                  "UNLOCKED": "A trava das portas não está acionada e o veículo pode ser aberto.",
+                  "ENGINE_ON_AND_UNLOCKED": "O motor está ligado e o veículo está destravado. Verifique se não foi esquecido ligado.",
+                  "FUEL_LOW": "Nível de combustível abaixo de 15 litros. Recomenda-se abastecer.",
+                  "AC_ON_WITH_ENGINE_OFF": "O ar-condicionado está ligado com o veículo desligado. Isso pode drenar a bateria de 12V.",
+                  "REVIEW_PREFIX": "Seu veículo está dentro do limite padrão de quilometragem para agendar a revisão."
+                } %}
+                {% for item in mensagens %}
+                  {% set partes = item.split('@') %}
+                  {% set codigo = partes[0] | trim %}
+                  {% if codigo in textos %}
+                  • {{ textos.get(codigo) }}
+                  {% elif codigo == 'VEHICLE_CHARGING_TIME' and partes|length >= 2 %}
+                  • O veículo está carregando. Tempo aproximado para carga total: {{ partes[1] }}.
+                  {% elif codigo == 'WINDOW_OPEN' and partes|length >= 2 %}
+                  • O {{ partes[1] }} está aberto.
+                  {% elif codigo == 'DOOR_OPEN' and partes|length >= 2 %}
+                  • A {{ partes[1] }} está aberta.
+                  {% elif codigo == 'TRUNK_OPEN' and partes|length >= 2 %}
+                  • O {{ partes[1] }} está aberto.
+                  {% elif codigo == 'BATTERY_12V_CRITICAL' and partes|length >= 2 %}
+                  • 🔴 Alerta crítico: bateria 12V em {{ partes[1] }}%. Ligue o motor o quanto antes.
+                  {% elif codigo == 'BATTERY_12V_ALERT' and partes|length >= 2 %}
+                  • 🟠 Atenção: bateria 12V em {{ partes[1] }}%.
+                  {% elif codigo == 'TIRE_PRESSURE' and partes|length >= 4 %}
+                  • A {{ partes[1] }} está em {{ partes[2] }} psi com temperatura de {{ partes[3] }}.
+                  {% elif codigo == 'TIRE_PRESSURE_DEFAULTS' and partes|length >= 3 %}
+                  • A pressão recomendada pela montadora é entre {{ partes[1] }} e {{ partes[2] }} psi.
+                  {% elif codigo == 'SERVICE_WITH_TOLERANCE' and partes|length >= 2 %}
+                  • Veículo no limite para revisão. Restam {{ partes[1] }} km antes da perda da garantia.
+                  {% else %}
+                  • {{ item }}
+                  {% endif %}
+
+                {% endfor %}
+              card_mod:
+                style: |
+                  ha-card {
+                    background: rgba(30, 35, 45, 0.4);
+                    backdrop-filter: blur(20px);
+                    border-radius: 6px;
+                    padding: 16px;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 14px;
+                    text-align: center;
+                    display: {% if states('sensor.gwmbrasil_h6_status_message') in
+                      ['NO_ALERTS','Não há alertas neste momento.','unknown','unavailable',''] %}
+                      none
+                    {% else %}
+                      block
+                    {% endif %} !important;
+                  }
+            - type: custom:button-card
+              name: MOTOR
+              show_icon: false
+              show_name: true
+              show_state: false
+              entity: sensor.gwmbrasil_h6_estado_do_motor
+              styles:
+                card:
+                  - background: transparent
+                  - box-shadow: none
+                  - padding: 8px 8px 0 8px
+                name:
+                  - font-size: 11px
+                  - font-weight: "500"
+                  - letter-spacing: 1px
+                  - color: rgba(255,255,255,0.4)
+                  - justify-self: start
+                grid:
+                  - grid-template-areas: '"n status"'
+                  - grid-template-columns: 1fr auto
+              custom_fields:
+                status: |
+                  [[[            
+                    const status = states[`sensor.gwmbrasil_h6_estado_do_motor`].state;
+                    if (status === 'none') return '';
+                    const isOn = status === '1';
+                    const color = isOn ? '#f87171' : '#4ade80';
+                    const text = isOn ? 'Ligado' : 'Desligado';
+                    return `<span style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${color};animation:pulse 2s infinite;"></span>
+                      <span style="font-size:11px;color:${color};">${text}</span>
+                    </span>`;
+                  ]]]
+            - type: horizontal-stack
+              cards: []
+            - type: custom:button-card
+              name: PORTAS
+              show_icon: false
+              entity: binary_sensor.gwmbrasil_h6_estado_da_trava
+              styles:
+                card:
+                  - background: transparent
+                  - box-shadow: none
+                  - padding: 16px 8px 0 8px
+                name:
+                  - font-size: 11px
+                  - font-weight: "500"
+                  - letter-spacing: 1px
+                  - color: rgba(255,255,255,0.4)
+                  - justify-self: start
+                grid:
+                  - grid-template-areas: '"n status"'
+                  - grid-template-columns: 1fr auto
+              custom_fields:
+                status: |
+                  [[[
+                    const status = states[`binary_sensor.gwmbrasil_h6_estado_da_trava`].state;
+                    if (status === 'none') return '';
+                    const isOpen = status === 'on';
+                    const color = isOpen ? '#f87171' : '#4ade80';
+                    const text = isOpen ? 'Abertas' : 'Fechadas';
+                    return `<span style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${color};animation:pulse 2s infinite;"></span>
+                      <span style="font-size:11px;color:${color};">${text}</span>
+                    </span>`;
+                  ]]]
+            - type: horizontal-stack
+              cards: []
+            - type: custom:button-card
+              name: PORTA-MALAS
+              show_icon: false
+              entity: binary_sensor.gwmbrasil_h6_porta_malas
+              styles:
+                card:
+                  - background: transparent
+                  - box-shadow: none
+                  - padding: 16px 8px 0 8px
+                name:
+                  - font-size: 11px
+                  - font-weight: "500"
+                  - letter-spacing: 1px
+                  - color: rgba(255,255,255,0.4)
+                  - justify-self: start
+                grid:
+                  - grid-template-areas: '"n status"'
+                  - grid-template-columns: 1fr auto
+              custom_fields:
+                status: |
+                  [[[
+                    const status = states[`binary_sensor.gwmbrasil_h6_porta_malas`].state;
+                    if (status === 'none') return '';
+                    const isOpen = status === 'on';
+                    const color = isOpen ? '#f87171' : '#4ade80';
+                    const text = isOpen ? 'Aberto' : 'Fechado';
+                    return `<span style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${color};animation:pulse 2s infinite;"></span>
+                      <span style="font-size:11px;color:${color};">${text}</span>
+                    </span>`;
+                  ]]]
+            - type: horizontal-stack
+              cards: []
+            - type: custom:button-card
+              name: VIDROS
+              show_icon: false
+              entity: sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo
+              tap_action:
+                action: none
+              hold_action:
+                action: none
+              styles:
+                card:
+                  - background: transparent
+                  - box-shadow: none
+                  - padding: 16px 8px 0 8px
+                name:
+                  - font-size: 11px
+                  - font-weight: "500"
+                  - letter-spacing: 1px
+                  - color: rgba(255,255,255,0.4)
+                  - justify-self: start
+                grid:
+                  - grid-template-areas: '"n status"'
+                  - grid-template-columns: 1fr auto
+              custom_fields:
+                status: |
+                  [[[
+                    const sensors = [
+                      `sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo`,
+                      `sensor.gwmbrasil_h6_vidro_dianteiro_direito`,
+                      `sensor.gwmbrasil_h6_vidro_traseiro_esquerdo`,
+                      `sensor.gwmbrasil_h6_vidro_traseiro_direito`
+                    ];
+
+                    const values = sensors
+                      .map(e => states[e]?.state)
+                      .filter(v => v !== undefined && v !== 'none');
+
+                    if (values.length === 0) return '';
+
+                    const anyOpen = values.some(v => v !== '1');
+
+                    const color = anyOpen ? '#f87171' : '#4ade80';
+                    const text  = anyOpen ? 'Abertos' : 'Fechados';
+
+                    return `
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="
+                          width:6px;
+                          height:6px;
+                          border-radius:50%;
+                          background:${color};
+                          animation:pulse 2s infinite;
+                        "></span>
+                        <span style="font-size:11px;color:${color};">
+                          ${text}
+                        </span>
+                      </span>
+                    `;
+                  ]]]
+            - type: horizontal-stack
+              cards: []
+            - type: custom:button-card
+              name: TETO SOLAR
+              show_icon: false
+              entity: sensor.gwmbrasil_h6_posicao_do_teto_solar
+              styles:
+                card:
+                  - background: transparent
+                  - box-shadow: none
+                  - padding: 16px 8px 0 8px
+                name:
+                  - font-size: 11px
+                  - font-weight: "500"
+                  - letter-spacing: 1px
+                  - color: rgba(255,255,255,0.4)
+                  - justify-self: start
+                grid:
+                  - grid-template-areas: '"n status"'
+                  - grid-template-columns: 1fr auto
+              custom_fields:
+                status: |
+                  [[[
+                    const status = states[`sensor.gwmbrasil_h6_posicao_do_teto_solar`].state;
+                    if (status === 'none') return '';
+                    const isOpen = status !== '3';
+                    const color = isOpen ? '#f87171' : '#4ade80';
+                    const text = isOpen ? 'Aberto' : 'Fechado';
+                    return `<span style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:${color};animation:pulse 2s infinite;"></span>
+                      <span style="font-size:11px;color:${color};">${text}</span>
+                    </span>`;
+                  ]]]
+            - type: horizontal-stack
+              cards: []
+    subview: true
+    layout: {}
+  - type: panel
+    path: gwm-charging-history
+    cards:
+      - type: custom:config-template-card
+        entities:
+          - sensor.gwmbrasil_h6_estado_de_carga_soc
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:gwm-charging-history-card
+              entity: sensor.gwmbrasil_h6_estado_de_carga_soc
+    title: Histórico de carregamento
+    icon: mdi:clipboard-text-clock
+    subview: false
+  - type: panel
+    path: mapa
+    title: Mapa
+    icon: mdi:map-marker-distance
+    cards:
+      - type: grid
+        square: false
+        cards:
+          - type: energy-date-selection
+            card_mod:
+              style: |
+                ha-card {
+                  z-index: 1;
+                  position: absolute;
+                  height: 80px !important;
+                  width: 80%;
+                  top: 75px;
+                  right: 10px;
+                  max-width: 450px;
+                  color: white;
+                  background: rgb(0,0,0,0.7);
+                }
+        columns: 1
+  - type: panel
+    path: gwm-3d
+    title: gwm-3d
+    icon: mdi:video-3d
+    cards: []

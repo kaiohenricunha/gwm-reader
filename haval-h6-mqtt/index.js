@@ -16,6 +16,12 @@ const EX_CONFIG = 78;
 
 async function main(env = process.env, argv = process.argv.slice(2)) {
   const boot = createLogger({ level: env.LOG_LEVEL || "INFO" });
+  if (argv.includes("--reset-halt")) {
+    // Needs only the data directory, so it works while live mode is off.
+    new Store({ dir: env.DATA_DIR || "/data", log: boot }).update({ halted: undefined });
+    boot.info("halt flag cleared; start the reader again");
+    return 0;
+  }
   let config;
   try {
     refusePlainSecrets(env); // before the gate: a plain secret is refused even when live mode is off
@@ -36,12 +42,6 @@ async function main(env = process.env, argv = process.argv.slice(2)) {
   const log = createLogger({ level: config.logLevel });
   for (const w of config.warnings) log.warn(w);
   const store = new Store({ dir: config.dataDir, log });
-
-  if (argv.includes("--reset-halt")) {
-    store.update({ halted: undefined });
-    log.info("halt flag cleared; start the reader again");
-    return 0;
-  }
 
   log.info("starting gwm-reader (read-only)", {
     mode: config.mode,

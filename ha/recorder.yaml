@@ -1,0 +1,15 @@
+# Home Assistant recorder settings for gwm-reader (merge into
+# configuration.yaml). Keep a short history, and keep lock, door, window
+# and sunroof states out of the database entirely: together they reveal
+# when the car is parked, open or unattended.
+recorder:
+  purge_keep_days: 7
+  commit_interval: 30
+  exclude:
+    entity_globs:
+      - binary_sensor.gwmbrasil_*_estado_da_trava
+      - binary_sensor.gwmbrasil_*_porta_*
+      - sensor.gwmbrasil_*_vidro_*
+      - sensor.gwmbrasil_*_posicao_do_teto_solar
+      - device_tracker.gwmbrasil_*
+      - sensor.gwmbrasil_*_status_message

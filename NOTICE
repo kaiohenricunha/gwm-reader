@@ -1,0 +1,23 @@
+gwm-reader — credits
+
+This project is a hardened, read-only fork of:
+
+  hassio-haval-h6-to-mqtt — Havaleiros Brasil (MIT)
+  https://github.com/havaleiros/hassio-haval-h6-to-mqtt
+  Contributors named upstream: @carvalr, @paulovitin, @bobaoapae, @rodrigogbs
+
+Upstream, in turn, credits the work it builds on:
+
+  haval-h6-gwm-alexa-chatgpt-mqtt-integration — ipsBruno
+  https://github.com/ipsBruno/haval-h6-gwm-alexa-chatgpt-mqtt-integration
+
+  ora2mqtt — zivillian
+  https://github.com/zivillian/ora2mqtt
+  (also the source of the GWM API notes cited in docs/AUDIT.md)
+
+Neither of those two repositories declares a license file on GitHub; no
+code from them is copied into this fork. Their credit is kept as upstream
+gives it (haval-h6-mqtt/README.md, "Créditos").
+
+Upstream files kept for reference and mergeability: haval-h6-mqtt/README.md,
+haval-h6-mqtt/CHANGELOG.md, haval-h6-mqtt/files/, haval-h6-mqtt/images/.

@@ -196,3 +196,24 @@ certificate unless authorization and necessity are established.
 
 Plan: delete `certs/` from the `hardened` tree. Add this exact fingerprint to `.gitleaksignore` (upstream
 history, not rewritten), and nothing else.
+
+## 11. Status in gwm-reader (branch `hardened`)
+
+| Finding (section) | Resolution | Commit | Proof |
+|---|---|---|---|
+| Command endpoints 5–7, MQTT command subscriptions, button entities (§1, §3) | Removed. `routes.js` allows only rows 1–4 | 31641d5 | `test/unit/routes.test.js`, `readonly.test.js`; the integration mock sees only the 4 routes |
+| `getChargeLogs` is a POST (§1 row 4) | The only non-login POST, with a pinned body (`vin`, `pageNum=1`, `pageSize=100`, `continuation=0`) | 31641d5 | `routes.test.js` (exact body, extra field, missing field) |
+| PIN read, sent as `md5(PIN)` (§2) | No option, no code. The source scan forbids it | 31641d5 | `readonly.test.js` |
+| No token renewal; `process.exit(0)` loops (§2) | Renewal on 401/expired codes; 3 logins/hour kept across restarts; backoff; halt + `reader_error` | 31641d5 | `client.test.js`, `reader.test.js` |
+| Plain env secrets; username/VIN at INFO (§2, §5) | File-only secrets; a plain env var stops the boot (exit 78); `/data` 0700, files 0600 | 86f3b1a | `config.test.js`, `main.test.js`, `store.test.js` |
+| VIN in topics and device ids; VIN list select (§3) | `VEHICLE_ID` alias; no select | 31641d5 | `reader.test.js`, integration "no VIN … reach the broker" |
+| GPS on by default; Nominatim (§4) | `DEVICE_TRACKER_ENABLED=false`; the geocoding code is deleted; Nominatim is blocked by the allowlist | 31641d5, 86f3b1a | `reader.test.js`, `httpClient.test.js` |
+| Raw errors and base64 dumps in logs (§5) | `logger.js`: one redaction filter at every level; errors become `{error_class, message}` | 31641d5, 86f3b1a | `logger.test.js` |
+| axios 1.19.0 (12 advisories), follow-redirects (§6) | axios removed (`node:https`, redirects not followed); only `mqtt` 5.16.0 at runtime; `npm audit`: 0 vulnerabilities | 31641d5 | CI `npm audit --audit-level=high` |
+| TLS off: the `ca` option replaced the trust store; `SECLEVEL=0` (§7) | Always verified against the system roots; an optional extra CA is *added*, never replaces them | 31641d5 | `tls.test.js` (fail-closed, tunnel) |
+| Client certificate required by the data gateway (§8) | Never bundled or fetched; optional owner-supplied files after GWM authorization (RUNBOOK) | 31641d5 | `tls.test.js` (presented only when configured) |
+| Committed private key (§9, §10) | `certs/` deleted from the tree; the exact fingerprint in `.gitleaksignore`; history not rewritten | 31641d5, 95cd608 | gitleaks over the full history: no leaks |
+| Auto-publish workflow; `:latest` bases; root user (§9) | Workflow deleted on `hardened` (disabled by ID on GitHub before Actions are enabled); digest-pinned distroless image, uid 65532 | 3ce5329, 95cd608 | CI `image` job |
+| `eval` of formulas; implicit globals (§9) | A named `kpa_to_psi` converter; ESLint `no-eval`, `no-implicit-globals` | 31641d5, 95cd608 | `reader.test.js`, `npm run lint` |
+| GWM iframe in the dashboard (§1) | `ha/dashboard.yaml` derived by `scripts/derive-dashboard.js` without iframe, buttons, service calls, select or map | stage 6 | `readonly.test.js` (dashboard scan) |
+| Egress | gwm-reader only on an internal network; Squid CONNECT allowlist | 3ce5329 | integration network probe |
