@@ -7,6 +7,10 @@
 #      the query string, the body or a credential).
 # Then it stops gwm-reader again (pass --keep to leave it running).
 #
+#   scripts/first-run.sh [--keep]     controlled live run (owner only)
+#   scripts/first-run.sh --report TS  only print the report for logs since TS
+#                                     (no start, no live mode; used by tests)
+#
 # With the placeholder proxy/allowlist.txt every CONNECT is denied, so the
 # first pass reaches nothing and only shows which domains the reader wants.
 # Review them, write the approved ones to proxy/allowlist.local.txt, and run
@@ -16,8 +20,41 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 window="${FIRST_RUN_SECONDS:-90}"
+project="${GWM_READER_PROJECT:-gwm-reader}"
+read -r -a extra <<< "${GWM_READER_COMPOSE_ARGS:-}"
+compose=(docker compose -p "$project" "${extra[@]}")
 keep=false
-[[ "${1:-}" == "--keep" ]] && keep=true
+report_since=""
+case "${1:-}" in
+  --keep) keep=true ;;
+  --report) report_since="${2:?usage: first-run.sh --report <since>}" ;;
+  "") ;;
+  *) echo "usage: first-run.sh [--keep | --report <since>]" >&2; exit 64 ;;
+esac
+
+report() {
+  local since="$1"
+  echo "== 1. proxy CONNECT attempts (squid) =="
+  "${compose[@]}" logs --no-log-prefix --since "$since" squid \
+    | awk '$4 == "CONNECT" {print $3, $5}' | sort | uniq -c | sort -rn || true
+
+  echo
+  echo "== 2. routes sent or blocked (gwm-reader) =="
+  "${compose[@]}" logs --no-log-prefix --since "$since" gwm-reader \
+    | grep -E '"msg":"route (audit|blocked)"' \
+    | sed -E 's/.*"msg":"(route [a-z]+)".*"method":"([A-Z]+)".*"host":"([^"]+)".*"path":"([^"]+)".*/\1 \2 \3\4/' \
+    | sort | uniq -c | sort -rn || true
+
+  echo
+  echo "== 3. reader state =="
+  "${compose[@]}" logs --no-log-prefix --since "$since" gwm-reader \
+    | grep -E '"level":"(warn|error)"|"msg":"(login succeeded|vehicle selected|status published|reader halted.*)"' | tail -n 20 || true
+}
+
+if [[ -n "$report_since" ]]; then
+  report "$report_since"
+  exit 0
+fi
 
 if [[ "${GWM_LIVE_ENABLED:-}" != "true" ]]; then
   echo "refusing: set GWM_LIVE_ENABLED=true for this command only, after the owner checklist in docs/RUNBOOK.md" >&2
@@ -30,28 +67,14 @@ for s in gwm_username gwm_password mqtt_gwm_reader_password mosquitto_passwd; do
   fi
 done
 
-compose=(docker compose -p gwm-reader)
 since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 GWM_LIVE_ENABLED=true "${compose[@]}" up -d --build
 echo "gwm-reader is running; collecting ${window}s of logs ..."
 sleep "$window"
 
 echo
-echo "== 1. proxy CONNECT attempts (squid) =="
-"${compose[@]}" logs --no-log-prefix --since "$since" squid \
-  | awk '$4 == "CONNECT" {print $3, $5}' | sort | uniq -c | sort -rn || true
-
+report "$since"
 echo
-echo "== 2. routes sent or blocked (gwm-reader) =="
-"${compose[@]}" logs --no-log-prefix --since "$since" gwm-reader \
-  | grep -E '"msg":"route (audit|blocked)"' \
-  | sed -E 's/.*"msg":"(route [a-z]+)".*"method":"([A-Z]+)".*"host":"([^"]+)".*"path":"([^"]+)".*/\1 \2 \3\4/' \
-  | sort | uniq -c | sort -rn || true
-
-echo
-echo "== 3. reader state =="
-"${compose[@]}" logs --no-log-prefix --since "$since" gwm-reader \
-  | grep -E '"level":"(warn|error)"|"msg":"(login succeeded|vehicle selected|status published|reader halted.*)"' | tail -n 20 || true
 
 if ! $keep; then
   "${compose[@]}" stop gwm-reader

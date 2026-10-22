@@ -38,7 +38,7 @@ test("non-GET methods are blocked on read routes, and every other method everywh
 });
 
 test("Nominatim and every other host are blocked", () => {
-  blocked(() => guard.check("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=-3.7&lon=-38.5"));
+  blocked(() => guard.check("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=-10.1&lon=-30.5"));
   blocked(() => guard.check("GET", "https://evil.example/app-api/api/v1.0/globalapp/vehicle/acquireVehicles"));
   blocked(() => guard.check("GET", "http://gwm-mock.test/app-api/api/v1.0/globalapp/vehicle/acquireVehicles"));
   blocked(() => guard.check("GET", "https://gwm-mock.test:8443/app-api/api/v1.0/globalapp/vehicle/acquireVehicles"));

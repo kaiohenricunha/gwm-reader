@@ -1,0 +1,43 @@
+# Integration-test overlay (project gwm-reader-it). Adds a mock GWM on the
+# egress network, points the reader at it in fixture mode, and swaps every
+# secret, the broker password file and the allowlist for throwaway test
+# files in $IT_DIR. Never used for a real run.
+services:
+  gwm-reader:
+    environment:
+      GWM_LIVE_ENABLED: "false"
+      GWM_LOGIN_URL: "https://mock-gwm/br-official-gateway/pc-api/api/v1.0/userAuth/loginAccount"
+      GWM_API_BASE: "https://mock-gwm/app-api/api/v1.0"
+      GWM_EXTRA_CA_FILE: "/run/secrets/it_ca"
+      REFRESH_TIME: "60"
+      CHARGING_HISTORY_INTERVAL: "3600"
+      LOG_LEVEL: "DEBUG"
+    secrets: [gwm_username, gwm_password, mqtt_password, it_ca]
+    depends_on:
+      mock-gwm: {condition: service_started}
+
+  squid:
+    volumes:
+      - ${IT_DIR:?}/allowlist.txt:/etc/squid/allowlist.txt:ro
+
+  mosquitto:
+    volumes:
+      - ${IT_DIR:?}/secrets/mosquitto_passwd:/mosquitto/secrets/passwd:ro
+
+  mock-gwm:
+    image: node:24.22.0-alpine3.23@sha256:e44c87c7dd212720eb00469aeac89504ca2be77b8f0d6dbffb30665d5fcc59e1
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+    command: ["node", "/it/mock-gwm.js"]
+    volumes:
+      - ./test/integration:/it:ro
+      - ${IT_DIR:?}/pki:/pki:ro
+    networks: [egress]
+
+secrets:
+  gwm_username: {file: "${IT_DIR:?}/secrets/gwm_username"}
+  gwm_password: {file: "${IT_DIR:?}/secrets/gwm_password"}
+  mqtt_password: {file: "${IT_DIR:?}/secrets/mqtt_gwm_reader_password"}
+  it_ca: {file: "${IT_DIR:?}/pki/ca.pem"}

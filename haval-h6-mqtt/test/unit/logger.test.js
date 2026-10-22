@@ -12,14 +12,14 @@ function sample() {
   const err = new Error(`login failed for ${TEST_EMAIL} token=${jwt()}`);
   err.config = { data: { account: TEST_EMAIL, password: MD5 }, headers: { accessToken: jwt() } };
   return {
-    msg: `vehicle ${TEST_VIN} at -3.71234, -38.54321 (masked ${TEST_VIN.slice(0, 5)}*******${TEST_VIN.slice(-5)})`,
+    msg: `vehicle ${TEST_VIN} at -10.12345, -30.54321 (masked ${TEST_VIN.slice(0, 5)}*******${TEST_VIN.slice(-5)})`,
     fields: {
       password: TEST_PASSWORD,
       accessToken: jwt(),
       account: TEST_EMAIL,
       note: `user ${TEST_EMAIL} vin fragment ${TEST_VIN.slice(-8)} wmi ${TEST_VIN.slice(0, 11)} lower ${TEST_VIN.toLowerCase()}`,
-      latitude: -3.71234,
-      position: "-3.7123456",
+      latitude: -10.12345,
+      position: "-10.1234567",
       md5: MD5,
       error: err,
       nested: { deep: [{ vin: TEST_VIN }, `pw ${TEST_PASSWORD}`] },
@@ -27,7 +27,7 @@ function sample() {
   };
 }
 
-const SECRET_STRINGS = [TEST_PASSWORD, TEST_EMAIL, TEST_VIN, TEST_VIN.toLowerCase(), TEST_VIN.slice(-8), TEST_VIN.slice(0, 11), MD5, "eyJ", "-3.71234", "-38.54321", "3.7123456"];
+const SECRET_STRINGS = [TEST_PASSWORD, TEST_EMAIL, TEST_VIN, TEST_VIN.toLowerCase(), TEST_VIN.slice(-8), TEST_VIN.slice(0, 11), MD5, "eyJ", "-10.12345", "-30.54321", "10.1234567"];
 
 for (const level of ["DEBUG", "INFO", "ERROR"]) {
   test(`LOG_LEVEL=${level}: no secret class reaches the output at any emitted level`, () => {

@@ -8,8 +8,8 @@ const { GwmError } = require("../../httpClient");
 const { createLogger } = require("../../logger");
 const { TEST_VIN, fakePublisher, memoryLog, memoryStore } = require("./helpers");
 
-const LAT = -3.71234;
-const LON = -38.54321;
+const LAT = -10.12345;
+const LON = -30.54321;
 
 const STATUS = {
   acquisitionTime: 1760000000000,

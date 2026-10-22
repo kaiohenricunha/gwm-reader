@@ -18,9 +18,12 @@ let base;
 let proxy;
 let proxyUrl;
 const connects = [];
+let lastClient = null;
 
 test.before(async () => {
-  server = https.createServer({ cert: pki.cert, key: pki.key }, (req, res) => {
+  server = https.createServer({ cert: pki.cert, key: pki.key, ca: pki.ca, requestCert: true, rejectUnauthorized: false }, (req, res) => {
+    const peer = req.socket.getPeerCertificate();
+    lastClient = req.socket.authorized && peer && peer.subject ? peer.subject.CN : null;
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ code: "000000", description: "SUCCESS", data: [] }));
   });
@@ -83,4 +86,16 @@ test("a proxy refusal surfaces as a proxy error", async () => {
   const c = createHttpClient({ guard: guardFor(other), tls: { ca: pki.ca }, proxyUrl });
   await assert.rejects(c.request("GET", `${other}/globalapp/vehicle/acquireVehicles`), (e) => e.errorClass === "proxy" && e.status === 403);
   c.close();
+});
+
+test("the optional client certificate is presented only when configured", async () => {
+  const withCert = createHttpClient({ guard: guardFor(base), tls: { ca: pki.ca, cert: pki.clientCert, key: pki.clientKey }, proxyUrl });
+  await withCert.request("GET", `${base}/globalapp/vehicle/acquireVehicles`);
+  assert.equal(lastClient, "gwm-reader test client");
+  withCert.close();
+
+  const without = createHttpClient({ guard: guardFor(base), tls: { ca: pki.ca } });
+  await without.request("GET", `${base}/globalapp/vehicle/acquireVehicles`);
+  assert.equal(lastClient, null);
+  without.close();
 });

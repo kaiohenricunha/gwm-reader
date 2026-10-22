@@ -23,7 +23,7 @@ const { sensorTopics } = require("./map");
 const PREFIX = "gwmbrasil";
 const VEHICLE_ID = /^[a-z0-9][a-z0-9_]{0,31}$/;
 
-/** slug follows the upstream entity naming: no accents, no "()-", words joined by "_". */
+/** slug follows the upstream status keys (carConnector.js:376): no accents, no "()-", words joined by "_". */
 function slug(text) {
   return String(text)
     .normalize("NFD")
@@ -33,6 +33,11 @@ function slug(text) {
     .trim()
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9_]/g, "");
+}
+
+/** entitySlug follows the upstream Home Assistant ids (mqtt.js:66): the first "-" becomes "_". */
+function entitySlug(name) {
+  return slug(String(name).replace("-", "_"));
 }
 
 function topics(vehicleId) {
@@ -69,7 +74,7 @@ function discoveryMessages({ vehicleId, model, trackerEnabled = false }) {
   const out = [];
 
   const entity = ({ key, component, name, unit, device_class, state_class, icon, attributes, category }) => {
-    const id = `${PREFIX}_${vehicleId}_${slug(name)}`;
+    const id = `${PREFIX}_${vehicleId}_${entitySlug(name)}`;
     const payload = { ...common, unique_id: id, default_entity_id: `${component}.${id}`, name, state_topic: t.state(key) };
     if (icon) payload.icon = icon;
     if (device_class && device_class !== "None") payload.device_class = device_class;
@@ -152,4 +157,4 @@ function createPublisher({ url, username, password, vehicleId, log, connect = mq
   return { topics: t, ready, publish, end, stats };
 }
 
-module.exports = { EXTRA_ENTITIES, PREFIX, VEHICLE_ID, createPublisher, discoveryMessages, slug, topics };
+module.exports = { EXTRA_ENTITIES, PREFIX, VEHICLE_ID, createPublisher, discoveryMessages, entitySlug, slug, topics };

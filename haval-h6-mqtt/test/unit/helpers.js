@@ -70,8 +70,10 @@ function makeTestPki(hostname = "localhost") {
   run(["req", "-newkey", "rsa:2048", "-nodes", "-keyout", "server.key", "-out", "server.csr", "-subj", `/CN=${hostname}`]);
   fs.writeFileSync(path.join(dir, "ext.cnf"), `subjectAltName=DNS:${hostname},IP:127.0.0.1\n`);
   run(["x509", "-req", "-in", "server.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-CAcreateserial", "-out", "server.pem", "-days", "2", "-extfile", "ext.cnf"]);
+  run(["req", "-newkey", "rsa:2048", "-nodes", "-keyout", "client.key", "-out", "client.csr", "-subj", "/CN=gwm-reader test client"]);
+  run(["x509", "-req", "-in", "client.csr", "-CA", "ca.pem", "-CAkey", "ca.key", "-CAcreateserial", "-out", "client.pem", "-days", "2"]);
   const read = (f) => fs.readFileSync(path.join(dir, f), "utf8");
-  return { dir, ca: read("ca.pem"), cert: read("server.pem"), key: read("server.key") };
+  return { dir, ca: read("ca.pem"), cert: read("server.pem"), key: read("server.key"), clientCert: read("client.pem"), clientKey: read("client.key") };
 }
 
 module.exports = { API_BASE, LOGIN_URL, TEST_EMAIL, TEST_PASSWORD, TEST_VIN, fakePublisher, jwt, makeTestPki, memoryLog, memoryStore, tmpDir };

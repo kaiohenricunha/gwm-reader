@@ -25,7 +25,7 @@ test("a blocked route throws RouteNotAllowed, is logged, and sends nothing", asy
   const { http, mem } = client();
   const nominatim = nock("https://nominatim.openstreetmap.org").get(/.*/).reply(200, {});
   const sendCmd = nock("https://gwm-mock.test").post(/.*/).reply(200, {});
-  await assert.rejects(http.request("GET", "https://nominatim.openstreetmap.org/reverse?lat=-3.71234&lon=-38.51234"), RouteNotAllowed);
+  await assert.rejects(http.request("GET", "https://nominatim.openstreetmap.org/reverse?lat=-10.12345&lon=-30.54321"), RouteNotAllowed);
   await assert.rejects(http.request("POST", `${API_BASE}/vehicle/T5/sendCmd`, { body: { vin: TEST_VIN } }), RouteNotAllowed);
   assert.equal(nominatim.isDone(), false);
   assert.equal(sendCmd.isDone(), false);
@@ -33,7 +33,7 @@ test("a blocked route throws RouteNotAllowed, is logged, and sends nothing", asy
   assert.equal(blocked.length, 2);
   assert.equal(blocked[0].level, "error");
   assert.equal(blocked[0].host, "nominatim.openstreetmap.org");
-  assert.ok(!JSON.stringify(mem.lines).includes("-3.71234"), "coordinates must not be logged");
+  assert.ok(!JSON.stringify(mem.lines).includes("-10.12345"), "coordinates must not be logged");
   assert.equal(http.stats.blocked_total, 2);
   assert.equal(http.stats.requests_total, 0);
 });

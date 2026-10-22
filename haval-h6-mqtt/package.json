@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "node --test \"test/unit/*.test.js\"",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:integration": "bash ../test/integration/run.sh"
   },
   "dependencies": {
     "mqtt": "5.16.0"
