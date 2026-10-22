@@ -95,6 +95,14 @@ Ask your insurer for a **written** answer (keep the e-mail) on:
 
 If you hold two products (the GWM-bundled insurance and a separate policy), ask both insurers.
 
+## 5b. MQTT users: one session each
+
+The broker allows one live connection per user name (`use_username_as_clientid`). If you connect
+as `homeassistant` to debug, Home Assistant is disconnected. For any extra tool, add a separate
+read-only user: add its name to the loop in `scripts/init-secrets.sh`, add a `user <name>` block
+with `topic read ...` lines to `mosquitto/acl`, run `./scripts/init-secrets.sh`, and restart the
+broker (`docker compose -p gwm-reader restart mosquitto`).
+
 ## 6. If you suspect a leak
 
 Do these steps at once and in this order:

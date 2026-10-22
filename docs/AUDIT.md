@@ -213,7 +213,7 @@ history, not rewritten), and nothing else.
 | TLS off: the `ca` option replaced the trust store; `SECLEVEL=0` (§7) | Always verified against the system roots; an optional extra CA is *added*, never replaces them | 31641d5 | `tls.test.js` (fail-closed, tunnel) |
 | Client certificate required by the data gateway (§8) | Never bundled or fetched; optional owner-supplied files after GWM authorization (RUNBOOK) | 31641d5 | `tls.test.js` (presented only when configured) |
 | Committed private key (§9, §10) | `certs/` deleted from the tree; the exact fingerprint in `.gitleaksignore`; history not rewritten | 31641d5, 95cd608 | gitleaks over the full history: no leaks |
-| Auto-publish workflow; `:latest` bases; root user (§9) | Workflow deleted on `hardened` (disabled by ID on GitHub before Actions are enabled); digest-pinned distroless image, uid 65532 | 3ce5329, 95cd608 | CI `image` job |
+| Auto-publish workflow; `:latest` bases; root user (§9) | Workflow deleted on `hardened`; `main` still mirrors upstream (owner action in README, security audit run-1); digest-pinned distroless image, uid 65532 | 3ce5329, 95cd608 | CI `image` job |
 | `eval` of formulas; implicit globals (§9) | A named `kpa_to_psi` converter; ESLint `no-eval`, `no-implicit-globals` | 31641d5, 95cd608 | `reader.test.js`, `npm run lint` |
 | GWM iframe in the dashboard (§1) | `ha/dashboard.yaml` derived by `scripts/derive-dashboard.js` without iframe, buttons, service calls, select or map | stage 6 | `readonly.test.js` (dashboard scan) |
 | Egress | gwm-reader only on an internal network; Squid CONNECT allowlist | 3ce5329 | integration network probe |

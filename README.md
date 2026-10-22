@@ -28,8 +28,8 @@ to MQTT for Home Assistant. It never sends anything to the car.
 | Raw errors and base64 dumps in the logs | One redaction filter at every level | The old logs held the password hash, tokens, VIN and coordinates. |
 | Committed app certificate and private key | Deleted from the tree. Optional, owner-supplied file only | Do not use it until GWM authorizes it. |
 | The VIN in every topic and entity id | `VEHICLE_ID` (default `h6`) | The VIN stays inside the process. |
-| `:latest` images, root user, auto-publish workflow | Digest-pinned multi-stage distroless image, uid 65532, no publish workflow | Supply chain. |
-| HA add-on packaging | Removed. Docker Compose only | The add-on option model cannot carry file secrets. |
+| `:latest` images, root user, auto-publish workflow | Digest-pinned multi-stage distroless image, uid 65532, no publish workflow on `hardened` (`main` still mirrors upstream; see "Update from upstream") | Supply chain. |
+| HA add-on packaging | Removed on `hardened`. Docker Compose only (`main` still serves upstream's add-on repository; do not add the fork URL to the HA add-on store) | The add-on option model cannot carry file secrets. |
 
 Kept: status polling (odometer, battery, fuel, tire pressure and temperature, charging state,
 doors, windows, locks) and the charge history, with the upstream entity names.
@@ -71,6 +71,12 @@ gwm-reader ──(mqtt_internal: internal network, no internet)──> mosquitto
 | `gwm_reader` | write `gwmbrasil/#` and `homeassistant/+/gwmbrasil/#`; read nothing |
 | `homeassistant` | read `gwmbrasil/#` and `homeassistant/#`; write nothing |
 | `kinestra_bridge` | read `gwmbrasil/+/snapshot` only |
+
+**One session per user.** The broker sets `use_username_as_clientid`: it names each connection after
+its user name, so no client can borrow another user's connection (security audit run-1). The side
+effect: a second login with the same user name drops the first. Give every extra tool or consumer
+its own MQTT user (add it to `scripts/init-secrets.sh` and `mosquitto/acl`, read-only). Never debug
+with `homeassistant` or `kinestra_bridge`, because that disconnects Home Assistant or Kinestra.
 
 Mosquitto 2.1's `acl_file` accepts every SUBSCRIBE (`plugins/acl-file/acl_check.c:42-45`). It
 enforces the read rules when it delivers. So `gwm_reader` can send a SUBSCRIBE, but it never
@@ -173,8 +179,14 @@ git switch hardened && git merge upstream/main
 
 When the merge touches these areas:
 
-- **Packaging** (`config.json`, `build.yaml`, `run.sh`, `repository.json`, `translations/`,
-  `certs/`): delete those files again.
+- **Packaging** (`config.json`, `build.yaml`, `run.sh`, `haval-h6-mqtt/Dockerfile`, `repository.json`,
+  `translations/`, `certs/`): delete those files again. `test/unit/repo-guard.test.js` fails while
+  any of them is back.
+- **`.github/`**: an upstream merge can add a workflow with no conflict. Delete every workflow that
+  is not `ci.yml`, and review any change to `ci.yml`. `repo-guard.test.js` fails if another
+  workflow exists or if `ci.yml` gets a write scope or a secret.
+- **`Dockerfile`, `.dockerignore`, `docker-compose.yml`, `mosquitto/`, `proxy/`**: these are fork
+  files. Keep the fork's version unless you have reviewed the upstream change.
 - **`carConnector.js`, `mqtt.js` or `index.js`**: port only **read** changes. Take a new
   status field into `map.js` as it is. Never take a command, a subscription, the PIN, geocoding,
   `rejectUnauthorized:false` or `SECLEVEL`. The source scan in `test/unit/readonly.test.js` fails
@@ -190,12 +202,19 @@ cd haval-h6-mqtt && npm ci && npm run lint && npm test && npm audit --audit-leve
 npm run test:integration
 ```
 
-**GitHub Actions on the fork.** `main` still holds upstream's `docker-build-publish.yml`, which
-publishes an image on every push to `main`. Before Actions are on, or before you use "Sync fork":
+**The fork's `main` branch is unhardened upstream code.** It holds upstream's
+`docker-build-publish.yml`, which publishes and signs an image on every push to `main`. It also
+serves upstream's HA add-on repository, which the HA Supervisor builds without GitHub Actions. The
+recommended fix is to make `hardened` the default branch and to stop pushing to `main`. Until then,
+before Actions are on, or before you use "Sync fork":
 
 1. Allow only the SHA-pinned actions that `ci.yml` uses.
 2. Disable that workflow (`gh workflow disable docker-build-publish.yml`).
 3. Set the default workflow token to read-only.
+
+These three settings do not stop a *new* upstream workflow file that declares its own write
+permissions. So never enable Actions while `main` mirrors upstream unreviewed, and keep the
+`.github/` rule above for `hardened`.
 
 ## Tests and CI
 
