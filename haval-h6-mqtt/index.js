@@ -3,7 +3,7 @@
 // gwm-reader entry point: configuration, the live-mode gate, the read-only
 // poll loop and graceful shutdown. See README.md and docs/AUDIT.md.
 
-const { ConfigError, liveGate, loadConfig } = require("./config");
+const { ConfigError, liveGate, loadConfig, refusePlainSecrets } = require("./config");
 const { GwmClient } = require("./carConnector");
 const { createHttpClient } = require("./httpClient");
 const { createRouteGuard } = require("./routes");
@@ -18,6 +18,7 @@ async function main(env = process.env, argv = process.argv.slice(2)) {
   const boot = createLogger({ level: env.LOG_LEVEL || "INFO" });
   let config;
   try {
+    refusePlainSecrets(env); // before the gate: a plain secret is refused even when live mode is off
     const gate = liveGate(env);
     if (!gate.run) {
       boot.info(gate.reason);

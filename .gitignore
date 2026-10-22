@@ -139,3 +139,11 @@ haval_h6gt
 body.json
 *.ori.js
 *blueprint.yaml
+# gwm-reader: personal data and secrets never enter git
+secrets/
+docker-compose.override.yml
+proxy/allowlist.local.txt
+data/
+.env
+.env.*
+!.env.example

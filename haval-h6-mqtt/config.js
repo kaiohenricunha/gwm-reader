@@ -13,6 +13,9 @@ const { VEHICLE_ID } = require("./mqtt");
 const DISABLED_MESSAGE =
   "live mode is disabled: gwm-reader does not contact GWM until the owner sets GWM_LIVE_ENABLED=true (see docs/RUNBOOK.md). Exiting.";
 
+const DEFAULTS = Object.freeze({ REFRESH_TIME: 300, CHARGING_HISTORY_INTERVAL: 21600 });
+const MINIMUMS = Object.freeze({ REFRESH_TIME: 60, CHARGING_HISTORY_INTERVAL: 3600 });
+
 class ConfigError extends Error {
   constructor(message) {
     super(message);
@@ -48,19 +51,46 @@ function liveGate(env) {
   return { run: false, mode: "disabled", liveAllowed: false, reason: DISABLED_MESSAGE };
 }
 
-/** readSecret returns NAME or the contents of NAME_FILE (one trailing newline removed). */
-function readSecret(env, name, readFile) {
-  const direct = env[name];
-  const file = env[`${name}_FILE`];
-  if (direct && file) throw new ConfigError(`set only one of ${name} and ${name}_FILE`);
-  if (file) {
-    try {
-      return String(readFile(file, "utf8")).replace(/\r?\n$/, "");
-    } catch {
-      throw new ConfigError(`${name}_FILE cannot be read`);
-    }
+// Secrets are accepted only from files. A plain environment variable leaks
+// through `docker inspect`, /proc/<pid>/environ and crash reports, so the
+// program refuses to start when one is set.
+const SECRETS = Object.freeze({
+  GWM_USERNAME: "gwm_username",
+  GWM_PASSWORD: "gwm_password",
+  MQTT_PASSWORD: "mqtt_password",
+});
+const PLAIN_SECRET_VARS = Object.freeze(["GWM_USERNAME", "GWM_PASSWORD", "PASSWORD", "MQTT_PASSWORD", "MQTT_PASS"]);
+const SECRETS_DIR = "/run/secrets";
+
+/** refusePlainSecrets throws when a secret is passed as a plain environment variable. */
+function refusePlainSecrets(env) {
+  const found = PLAIN_SECRET_VARS.filter((n) => env[n] !== undefined && env[n] !== "");
+  if (found.length) {
+    throw new ConfigError(
+      `refusing to start: ${found.join(", ")} set as plain environment variable(s). Secrets are read only from files: ` +
+        "use GWM_USERNAME_FILE, GWM_PASSWORD_FILE and MQTT_PASSWORD_FILE (or Docker secrets in /run/secrets).",
+    );
   }
-  return direct || undefined;
+}
+
+/**
+ * readSecretFile returns the contents of NAME_FILE, or of /run/secrets/<name>
+ * when NAME_FILE is not set, with one trailing newline removed. It returns
+ * undefined when neither exists.
+ */
+function readSecretFile(env, name, readFile, secretsDir = SECRETS_DIR) {
+  const explicit = env[`${name}_FILE`];
+  const file = explicit || `${secretsDir}/${SECRETS[name] || name.toLowerCase()}`;
+  let v;
+  try {
+    v = String(readFile(file, "utf8"));
+  } catch (err) {
+    if (!explicit && err && err.code === "ENOENT") return undefined;
+    throw new ConfigError(`${explicit ? `${name}_FILE` : file} cannot be read`);
+  }
+  v = v.replace(/\r?\n$/, "");
+  if (v === "") throw new ConfigError(`${explicit ? `${name}_FILE` : file} is empty`);
+  return v;
 }
 
 function readPem(name, file, readFile) {
@@ -91,15 +121,19 @@ function bool(env, name, def) {
   throw new ConfigError(`${name} must be true or false`);
 }
 
-function loadConfig(env = process.env, { readFile = readFileSync } = {}) {
+function loadConfig(env = process.env, { readFile = readFileSync, secretsDir = SECRETS_DIR } = {}) {
   const warnings = [];
+  refusePlainSecrets(env);
   const gate = liveGate(env);
 
-  const username = readSecret(env, "GWM_USERNAME", readFile);
-  const password = readSecret(env, "GWM_PASSWORD", readFile);
-  if (!username) throw new ConfigError("GWM_USERNAME is required");
-  if (!password) throw new ConfigError("GWM_PASSWORD is required");
-  const vin = readSecret(env, "GWM_VIN", readFile);
+  const username = readSecretFile(env, "GWM_USERNAME", readFile, secretsDir);
+  const password = readSecretFile(env, "GWM_PASSWORD", readFile, secretsDir);
+  if (!username) throw new ConfigError(`GWM_USERNAME_FILE (or ${secretsDir}/gwm_username) is required`);
+  if (!password) throw new ConfigError(`GWM_PASSWORD_FILE (or ${secretsDir}/gwm_password) is required`);
+  const mqttPassword = readSecretFile(env, "MQTT_PASSWORD", readFile, secretsDir);
+  // The VIN only selects the vehicle on a multi-vehicle account. It is not a
+  // credential, but it is personal data: keep it in docker-compose.override.yml.
+  const vin = env.GWM_VIN_FILE ? readPem("GWM_VIN_FILE", env.GWM_VIN_FILE, readFile).trim() : env.GWM_VIN || undefined;
 
   const vehicleId = env.VEHICLE_ID || "h6";
   if (!VEHICLE_ID.test(vehicleId)) throw new ConfigError("VEHICLE_ID must match ^[a-z0-9][a-z0-9_]{0,31}$");
@@ -133,18 +167,18 @@ function loadConfig(env = process.env, { readFile = readFileSync } = {}) {
     password,
     vin,
     vehicleId,
-    refreshTimeS: seconds(env, "REFRESH_TIME", 30, 5, warnings),
-    chargingHistoryIntervalS: seconds(env, "CHARGING_HISTORY_INTERVAL", 21600, 300, warnings),
-    deviceTrackerEnabled: bool(env, "DEVICE_TRACKER_ENABLED", true),
+    refreshTimeS: seconds(env, "REFRESH_TIME", DEFAULTS.REFRESH_TIME, MINIMUMS.REFRESH_TIME, warnings),
+    chargingHistoryIntervalS: seconds(env, "CHARGING_HISTORY_INTERVAL", DEFAULTS.CHARGING_HISTORY_INTERVAL, MINIMUMS.CHARGING_HISTORY_INTERVAL, warnings),
+    deviceTrackerEnabled: bool(env, "DEVICE_TRACKER_ENABLED", false),
     logLevel,
-    mqttUrl: env.MQTT_HOST || "mqtt://mosquitto:1883",
-    mqttUsername: env.MQTT_USER || undefined,
-    mqttPassword: env.MQTT_PASS || undefined,
-    dataDir: env.DATA_DIR || "./storage",
+    mqttUrl: env.MQTT_URL || "mqtt://mosquitto:1883",
+    mqttUsername: env.MQTT_USERNAME || "gwm_reader",
+    mqttPassword,
+    dataDir: env.DATA_DIR || "/data",
     tls,
     proxyUrl,
     requestTimeoutMs: 20_000,
   });
 }
 
-module.exports = { ConfigError, DISABLED_MESSAGE, liveGate, loadConfig, readSecret };
+module.exports = { ConfigError, DEFAULTS, DISABLED_MESSAGE, MINIMUMS, PLAIN_SECRET_VARS, liveGate, loadConfig, readSecretFile, refusePlainSecrets };
