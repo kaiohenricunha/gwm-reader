@@ -66,8 +66,10 @@ test("the bridge receives a snapshot with source timestamps and no identifiers",
 
 test("charge history arrives on its own timer", { timeout: 60_000 }, async () => {
   // Reuse the one homeassistant connection: the broker allows one session per user.
-  let got = await subscribeAndCollect(ha, ["gwmbrasil/h6/charging_history/#"], 2000);
-  for (let i = 0; i < 20 && !got.some((m) => m.topic.endsWith("/state")); i++) got = got.concat(await subscribeAndCollect(ha, [], 2000));
+  // ha also receives the live state topics, so keep only the charge-history ones.
+  const only = (ms) => ms.filter((m) => m.topic.startsWith("gwmbrasil/h6/charging_history/"));
+  let got = only(await subscribeAndCollect(ha, ["gwmbrasil/h6/charging_history/#"], 2000));
+  for (let i = 0; i < 20 && !got.some((m) => m.topic.endsWith("/state")); i++) got = got.concat(only(await subscribeAndCollect(ha, [], 2000)));
   assert.equal(got.find((m) => m.topic.endsWith("/state"))?.payload, "2");
   const attrs = JSON.parse(got.find((m) => m.topic.endsWith("/attributes")).payload);
   assert.equal(attrs.charging_logs.length, 2);
