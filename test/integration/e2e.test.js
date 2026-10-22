@@ -65,11 +65,30 @@ test("the bridge receives a snapshot with source timestamps and no identifiers",
 });
 
 test("charge history arrives on its own timer", { timeout: 60_000 }, async () => {
-  const c = await connect("homeassistant");
-  let got = await subscribeAndCollect(c, ["gwmbrasil/h6/charging_history/#"], 2000);
-  for (let i = 0; i < 20 && !got.some((m) => m.topic.endsWith("/state")); i++) got = got.concat(await subscribeAndCollect(c, [], 2000));
-  await end(c);
+  // Reuse the one homeassistant connection: the broker allows one session per user.
+  let got = await subscribeAndCollect(ha, ["gwmbrasil/h6/charging_history/#"], 2000);
+  for (let i = 0; i < 20 && !got.some((m) => m.topic.endsWith("/state")); i++) got = got.concat(await subscribeAndCollect(ha, [], 2000));
   assert.equal(got.find((m) => m.topic.endsWith("/state"))?.payload, "2");
   const attrs = JSON.parse(got.find((m) => m.topic.endsWith("/attributes")).payload);
   assert.equal(attrs.charging_logs.length, 2);
+});
+
+test("a read-only user presenting the reader's client id does not knock it offline", { timeout: 30_000 }, async () => {
+  const mqtt = require("mqtt");
+  const fs = require("node:fs");
+  const attacker = await new Promise((resolve, reject) => {
+    const c = mqtt.connect(process.env.MQTT_URL || "mqtt://mosquitto:1883", {
+      username: "kinestra_bridge",
+      password: fs.readFileSync(`${process.env.IT_SECRETS || "/it-secrets"}/mqtt_kinestra_bridge_password`, "utf8").trim(),
+      clientId: "gwm-reader-h6",
+      protocolVersion: 5,
+      reconnectPeriod: 0,
+    });
+    c.once("connect", () => resolve(c));
+    c.once("error", reject);
+  });
+  await new Promise((r) => setTimeout(r, 2000));
+  await end(attacker);
+  const got = await subscribeAndCollect(ha, ["gwmbrasil/h6/availability"], 1500);
+  assert.equal(got.filter((m) => m.topic === "gwmbrasil/h6/availability").at(-1)?.payload, "online");
 });

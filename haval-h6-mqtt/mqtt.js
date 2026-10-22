@@ -123,6 +123,13 @@ function createPublisher({ url, username, password, vehicleId, log, connect = mq
   });
   client.on("error", (err) => log?.warn("mqtt error", { error_class: "mqtt", message: err?.message }));
   client.on("reconnect", () => log?.debug("mqtt reconnecting"));
+  // Re-assert availability on every (re)connection, so a dropped session or
+  // a fired will never leaves a stale retained "offline" behind.
+  client.on("connect", () => {
+    client.publish(t.availability, "online", { qos: 1, retain: true }, (err) => {
+      if (err) log?.warn("availability publish failed", { error_class: "mqtt", message: err?.message });
+    });
+  });
 
   function ready() {
     if (client.connected) return Promise.resolve();

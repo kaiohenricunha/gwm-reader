@@ -60,6 +60,23 @@ printf '# integration test only\nmock-gwm\n' > "$IT_DIR/allowlist.txt"
 step "start the stack"
 since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 "${compose[@]}" up -d --build --wait mosquitto squid mock-gwm >/dev/null
+
+run_node_tests() { # run_node_tests <file>...: node:test inside the internal network
+  timeout 300 docker run --rm --network "${P}_mqtt_internal" --user "$(id -u):$(id -g)" \
+    -v "$root:/w:ro" -v "$IT_DIR/secrets:/it-secrets:ro" \
+    -e NODE_PATH=/w/haval-h6-mqtt/node_modules -e MQTT_URL=mqtt://mosquitto:1883 \
+    "$node_image" node --test --test-concurrency=1 "$@"
+}
+
+step "MQTT ACL tests (before the reader starts: the broker allows one session per user)"
+if [[ "${IT_SKIP_NODE:-}" == 1 ]]; then
+  echo "SKIP node:test ACL suite (IT_SKIP_NODE=1)"
+elif run_node_tests /w/test/integration/acl.test.js; then
+  echo "PASS node:test ACL suite"
+else
+  echo "FAIL node:test ACL suite"; fail=1
+fi
+
 "${compose[@]}" up -d gwm-reader >/dev/null
 for _ in $(seq 1 60); do
   "${compose[@]}" logs --no-log-prefix gwm-reader 2>/dev/null | grep -q '"msg":"status published"' && break
@@ -87,17 +104,15 @@ check "proxy refuses a host that is not allowlisted (403)" test "$(jq_get proxy_
 check "proxy allows the allowlisted mock (200)" test "$(jq_get proxy_allowlisted_mock)" = 200
 check "proxy refuses a non-443 port (403)" test "$(jq_get proxy_mock_other_port)" = 403
 
-step "MQTT ACL and end-to-end tests (node:test inside the internal network)"
+step "end-to-end tests (node:test inside the internal network)"
 if [[ "${IT_SKIP_NODE:-}" == 1 ]]; then
-  echo "SKIP node:test suites (IT_SKIP_NODE=1)"
-elif timeout 300 docker run --rm --network "${P}_mqtt_internal" --user "$(id -u):$(id -g)" \
-  -v "$root:/w:ro" -v "$IT_DIR/secrets:/it-secrets:ro" \
-  -e NODE_PATH=/w/haval-h6-mqtt/node_modules -e MQTT_URL=mqtt://mosquitto:1883 \
-  "$node_image" node --test --test-concurrency=1 /w/test/integration/acl.test.js /w/test/integration/e2e.test.js; then
-  echo "PASS node:test integration suites"
+  echo "SKIP node:test end-to-end suite (IT_SKIP_NODE=1)"
+elif run_node_tests /w/test/integration/e2e.test.js; then
+  echo "PASS node:test end-to-end suite"
 else
-  echo "FAIL node:test integration suites"; fail=1
+  echo "FAIL node:test end-to-end suite"; fail=1
 fi
+check "the reader's broker session was never taken over (no reconnect)" bash -c "! ${compose[*]} logs --no-log-prefix gwm-reader | grep -q 'mqtt reconnecting'"
 
 step "the mock saw only allowlisted read routes"
 "${compose[@]}" logs --no-log-prefix mock-gwm | grep '"route"' | sed -E 's/.*"route":"([^"]+)".*/\1/' | sort | uniq -c

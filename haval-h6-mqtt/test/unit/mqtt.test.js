@@ -36,3 +36,23 @@ test("the publisher sets a retained offline will, connects as the configured use
   assert.equal(pub.subscribe, undefined);
   assert.throws(() => createPublisher({ url: "mqtt://x", vehicleId: "Bad Id", connect: () => fake }), /VEHICLE_ID/);
 });
+
+test("every (re)connect re-publishes availability online, retained", () => {
+  const handlers = {};
+  const published = [];
+  const fake = {
+    connected: true,
+    on: (ev, fn) => (handlers[ev] = fn),
+    once() {},
+    publish: (t, p, o, cb) => (published.push({ t, p: String(p), retain: o.retain, qos: o.qos }), cb && cb()),
+    end: (_f, _o, cb) => cb(),
+  };
+  createPublisher({ url: "mqtt://x", username: "gwm_reader", password: "p", vehicleId: "h6", connect: () => fake });
+  assert.equal(typeof handlers.connect, "function");
+  handlers.connect();
+  handlers.connect();
+  assert.deepEqual(published, [
+    { t: "gwmbrasil/h6/availability", p: "online", retain: true, qos: 1 },
+    { t: "gwmbrasil/h6/availability", p: "online", retain: true, qos: 1 },
+  ]);
+});

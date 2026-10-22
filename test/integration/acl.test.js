@@ -28,27 +28,56 @@ test("anonymous clients are refused", async () => {
 });
 
 test("gwm_reader receives nothing on any topic, retained or live, even after subscribing", async () => {
+  // Seed retained messages first (HA must see them), so an empty result for
+  // gwm_reader proves the read rule, not an empty broker.
+  const seed = await connect("gwm_reader");
+  for (const t of ["gwmbrasil/it_probe/acl/state", "homeassistant/sensor/gwmbrasil/it_probe_acl/config"]) {
+    assert.equal(await publish(seed, t, "retained-probe", { retain: true }), "ok");
+  }
+  await end(seed);
+  const ha = await connect("homeassistant");
+  const seen = collect(ha, 1500);
+  await subscribe(ha, "gwmbrasil/it_probe/#");
+  await subscribe(ha, "homeassistant/+/gwmbrasil/#");
+  assert.ok((await seen).filter((m) => m.retain && m.payload === "retained-probe").length >= 2, "HA sees the retained probes");
+  await end(ha);
+
   const r = await connect("gwm_reader");
   const pending = collect(r, 3000);
   for (const t of ["#", "gwmbrasil/#", "gwmbrasil/+/+/set", "homeassistant/#", "homeassistant/status", "homeassistant/+/gwmbrasil/#"]) {
     await subscribe(r, t);
   }
-  // Fresh messages on its own topics and on command-like topics.
   assert.equal(await publish(r, "gwmbrasil/it_probe/acl/state", "x"), "ok");
   assert.equal(await publish(r, "gwmbrasil/h6/2208001/set", "1"), "ok");
   const got = await pending;
   assert.deepEqual(got, [], `delivered to gwm_reader: ${got.map((m) => m.topic).join(", ")}`);
+  for (const t of ["gwmbrasil/it_probe/acl/state", "homeassistant/sensor/gwmbrasil/it_probe_acl/config", "gwmbrasil/h6/2208001/set"]) {
+    await publish(r, t, "", { retain: true });
+  }
   await end(r);
 });
 
-test("the retained topics gwm_reader cannot read do exist (so the empty result above is meaningful)", async () => {
-  const ha = await connect("homeassistant");
-  const pending = collect(ha, 2500);
-  await subscribe(ha, "homeassistant/+/gwmbrasil/#");
-  await subscribe(ha, "gwmbrasil/h6/#");
-  const got = await pending;
-  assert.ok(got.filter((m) => m.retain).length >= 48, `retained messages: ${got.length}`);
-  await end(ha);
+test("the broker binds the client id to the username (no session takeover)", async () => {
+  const victim = await connect("gwm_reader");
+  let victimClosed = false;
+  victim.on("close", () => (victimClosed = true));
+  // A read-only user presents the reader's id; the broker renames it to its username.
+  const mqtt = require("mqtt");
+  const fs = require("node:fs");
+  const attacker = await new Promise((resolve, reject) => {
+    const c = mqtt.connect(process.env.MQTT_URL || "mqtt://mosquitto:1883", {
+      username: "kinestra_bridge",
+      password: fs.readFileSync(`${process.env.IT_SECRETS || "/it-secrets"}/mqtt_kinestra_bridge_password`, "utf8").trim(),
+      clientId: "gwm-reader-h6",
+      protocolVersion: 5,
+      reconnectPeriod: 0,
+    });
+    c.once("connect", () => resolve(c));
+    c.once("error", reject);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  assert.equal(victimClosed, false, "the gwm_reader session must survive a foreign CONNECT with its id");
+  await end(attacker, victim);
 });
 
 test("gwm_reader may publish only gwmbrasil/# and homeassistant/+/gwmbrasil/#", async () => {
