@@ -15,17 +15,29 @@ const REDACTED = "[REDACTED]";
 const SENSITIVE_KEY =
   /token|password|passwd|secret|authorization|cookie|session|credential|vin|imsi|iccid|imei|engineno|lat|lon|lng|gps|location|address|account|email|e_mail|phone|mobile|username|user_name|deviceid|device_id|plate|license|cert|private|^key$|_key$/i;
 
-const JWT = /eyJ[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]*/g;
+// Every quantifier is bounded and the input is capped (MAX_REDACT_CHARS), so
+// redaction stays linear even for hostile, very long strings (audit run-1).
+const JWT = /eyJ[A-Za-z0-9_-]{4,2048}\.[A-Za-z0-9_-]{4,2048}\.[A-Za-z0-9_-]{0,2048}/g;
 const HEX32 = /\b[a-fA-F0-9]{32}\b/g;
-const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const EMAIL = /[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,63}/g;
 // 17 alphanumerics with at least one letter and one digit (a VIN or similar id).
-const VIN_LIKE = /\b(?=[A-Za-z0-9]*\d)(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{17}\b/g;
+const VIN_LIKE = /\b(?=[A-Za-z0-9]{0,16}\d)(?=[A-Za-z0-9]{0,16}[A-Za-z])[A-Za-z0-9]{17}\b/g;
 // A VIN masked by the API, for example "ABCDE*******12345".
-const MASKED_ID = /\b[A-Za-z0-9]{2,}\*{3,}[A-Za-z0-9]{2,}\b/g;
-const COORD_PAIR = /-?\d{1,3}\.\d{3,}\s*[,;/ ]\s*-?\d{1,3}\.\d{3,}/g;
+const MASKED_ID = /\b[A-Za-z0-9]{2,32}\*{3,32}[A-Za-z0-9]{2,32}\b/g;
+const COORD_PAIR = /-?\d{1,3}\.\d{3,15}[ \t]{0,3}[,;/ ][ \t]{0,3}-?\d{1,3}\.\d{3,15}/g;
 // A single coordinate-like number (5 or more decimals).
-const COORD_ONE = /-?\b\d{1,3}\.\d{5,}\b/g;
+const COORD_ONE = /-?\b\d{1,3}\.\d{5,15}\b/g;
 const COORD_NUMBER = /^-?\d{1,3}\.\d{5,}$/;
+const MAX_REDACT_CHARS = 8192;
+const TOKEN_CHAR = /[A-Za-z0-9._%+@*-]/;
+
+/** truncate caps a string and never keeps a token cut in half (it could be half a secret). */
+function truncate(s) {
+  if (s.length <= MAX_REDACT_CHARS) return s;
+  let end = MAX_REDACT_CHARS;
+  while (end > 0 && TOKEN_CHAR.test(s[end - 1])) end--;
+  return `${s.slice(0, end)}[TRUNCATED]`;
+}
 
 const secrets = new Set();
 let sorted = [];
@@ -78,7 +90,7 @@ function redactString(s) {
   for (const v of sorted) {
     if (out.includes(v)) out = out.split(v).join(REDACTED);
   }
-  return out
+  return truncate(out)
     .replace(JWT, REDACTED)
     .replace(EMAIL, REDACTED)
     .replace(HEX32, REDACTED)
@@ -159,6 +171,7 @@ function createLogger({ level = "INFO", write = (line) => process.stderr.write(l
 }
 
 module.exports = {
+  MAX_REDACT_CHARS,
   REDACTED,
   LEVELS,
   clearSecrets,

@@ -96,3 +96,13 @@ test("LoginLimiter ignores corrupt saved attempts", () => {
   const l = new LoginLimiter({ store: memoryStore({ loginAttempts: ["x", null, 5] }), now: () => 10 });
   assert.deepEqual(l.attempts, [5]);
 });
+
+test("an oversized or odd API code becomes 'invalid' before it reaches error classes", async () => {
+  const { client } = makeClient({ store: memoryStore({ accessToken: jwt() }) });
+  nock(MOCK).get(`${API}/vehicle/getLastStatus`).query(true).reply(200, { code: "a".repeat(100000), description: "FAIL", data: null });
+  await assert.rejects(client.getLastStatus(TEST_VIN), (e) => e.errorClass === "api_invalid" && e.apiCode === "invalid");
+  nock(MOCK).get(`${API}/vehicle/getLastStatus`).query(true).reply(200, { code: "99999<img src=x>", description: "FAIL", data: null });
+  await assert.rejects(client.getLastStatus(TEST_VIN), (e) => e.errorClass === "api_invalid");
+  nock(MOCK).get(`${API}/vehicle/getLastStatus`).query(true).reply(200, { code: "308024", description: "busy" });
+  await assert.rejects(client.getLastStatus(TEST_VIN), (e) => e.rateLimited === true, "known short codes still work");
+});

@@ -3,7 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { REDACTED, clearSecrets, createLogger, redact, registerSecret, registerVin } = require("../../logger");
+const { MAX_REDACT_CHARS, REDACTED, clearSecrets, createLogger, redact, redactString, registerSecret, registerVin } = require("../../logger");
 const { TEST_EMAIL, TEST_PASSWORD, TEST_VIN, jwt, memoryLog } = require("./helpers");
 
 const MD5 = "5f4dcc3b5aa765d61d8327deb882cf99";
@@ -74,4 +74,22 @@ test("levels filter as documented", () => {
   log.warn("w");
   log.error("e");
   assert.deepEqual(mem.lines.map((l) => l.msg), ["e"]);
+});
+
+test("redaction stays linear on hostile long strings and caps its output", () => {
+  clearSecrets();
+  for (const input of ["a".repeat(1 << 20), "1.111" + " ".repeat(1 << 20) + "x", "eyJ".repeat(1 << 18), "A1".repeat(1 << 19), "ab***".repeat(1 << 18)]) {
+    const t0 = process.hrtime.bigint();
+    const out = redactString(input);
+    const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+    assert.ok(ms < 1000, `${ms.toFixed(1)} ms for ${input.slice(0, 6)}...`);
+    assert.ok(out.length <= MAX_REDACT_CHARS + 20);
+  }
+});
+
+test("truncation never leaves half of a token", () => {
+  clearSecrets();
+  const out = redactString("x ".repeat(MAX_REDACT_CHARS / 2 - 3) + "someone@example.org tail");
+  assert.ok(out.endsWith("[TRUNCATED]"));
+  assert.ok(!/some(one)?@?$/.test(out.replace("[TRUNCATED]", "")));
 });

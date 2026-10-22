@@ -47,6 +47,7 @@ const AUTH_CODES = new Set(["550004", "570062"]); // access / refresh token expi
 const RATE_LIMIT_CODES = new Set(["308024"]);
 const BUSY_CODES = new Set(["550002"]);
 const TOKEN_MARGIN_MS = 60_000;
+const API_CODE = /^[A-Za-z0-9_-]{1,16}$/;
 
 function md5Hex(s) {
   return createHash("md5").update(String(s)).digest("hex");
@@ -147,7 +148,10 @@ class GwmClient {
     } catch {
       body = undefined;
     }
-    const apiCode = body && body.code !== undefined && body.code !== null ? String(body.code) : undefined;
+    // API codes are short tokens; anything else becomes "invalid", so a hostile
+    // value never reaches error classes, logs or retained MQTT (audit run-1).
+    const rawCode = body && body.code !== undefined && body.code !== null ? String(body.code) : undefined;
+    const apiCode = rawCode === undefined ? undefined : API_CODE.test(rawCode) ? rawCode : "invalid";
     if (status === 429 || (apiCode && RATE_LIMIT_CODES.has(apiCode))) {
       this.stats.rate_limited_total += 1;
       throw new GwmError(status === 429 ? "http_429" : `api_${apiCode}`, `${endpoint}: rate limited`, { status, apiCode, rateLimited: true });
