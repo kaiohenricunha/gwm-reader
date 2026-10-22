@@ -215,5 +215,7 @@ history, not rewritten), and nothing else.
 | Committed private key (§9, §10) | `certs/` deleted from the tree; the exact fingerprint in `.gitleaksignore`; history not rewritten | 31641d5, 95cd608 | gitleaks over the full history: no leaks |
 | Auto-publish workflow; `:latest` bases; root user (§9) | Workflow deleted on `hardened`; `main` still mirrors upstream (owner action in README, security audit run-1); digest-pinned distroless image, uid 65532 | 3ce5329, 95cd608 | CI `image` job |
 | `eval` of formulas; implicit globals (§9) | A named `kpa_to_psi` converter; ESLint `no-eval`, `no-implicit-globals` | 31641d5, 95cd608 | `reader.test.js`, `npm run lint` |
-| GWM iframe in the dashboard (§1) | `ha/dashboard.yaml` derived by `scripts/derive-dashboard.js` without iframe, buttons, service calls, select or map | stage 6 | `readonly.test.js` (dashboard scan) |
+| GWM iframe in the dashboard (§1) | `ha/dashboard.yaml` derived by `scripts/derive-dashboard.js` without iframe, buttons, service calls, select or map | fd34435 | `readonly.test.js` (dashboard scan) |
 | Egress | gwm-reader only on an internal network; Squid CONNECT allowlist | 3ce5329 | integration network probe |
+
+Stage 7 (`/security-audit` run-1) found 4 further defects in the fork and 1 lead that needs validation. All of them are fixed or guarded in commits `41171b1` to `4d24786`. See [`docs/SECURITY-AUDIT.md`](SECURITY-AUDIT.md).
