@@ -103,6 +103,8 @@ check "public DNS does not resolve" bash -c "[[ '$(jq_get dns_public)' != RESOLV
 check "proxy refuses a host that is not allowlisted (403)" test "$(jq_get proxy_not_allowlisted)" = 403
 check "proxy allows the allowlisted mock (200)" test "$(jq_get proxy_allowlisted_mock)" = 200
 check "proxy refuses a non-443 port (403)" test "$(jq_get proxy_mock_other_port)" = 403
+check "proxy refuses an IPv4 literal CONNECT (403, no reverse-DNS match)" test "$(jq_get proxy_ipv4_literal)" = 403
+check "proxy refuses an IPv6 literal CONNECT (403)" test "$(jq_get proxy_ipv6_literal)" = 403
 
 step "end-to-end tests (node:test inside the internal network)"
 if [[ "${IT_SKIP_NODE:-}" == 1 ]]; then

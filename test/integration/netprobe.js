@@ -33,6 +33,8 @@ const viaProxy = (target) =>
     proxy_not_allowlisted: await viaProxy("example.com:443"),
     proxy_allowlisted_mock: await viaProxy("mock-gwm:443"),
     proxy_mock_other_port: await viaProxy("mock-gwm:80"),
+    proxy_ipv4_literal: await viaProxy("10.255.255.1:443"),
+    proxy_ipv6_literal: await viaProxy("[fd00::1]:443"),
   };
   process.stdout.write(JSON.stringify(out) + "\n");
 })();
