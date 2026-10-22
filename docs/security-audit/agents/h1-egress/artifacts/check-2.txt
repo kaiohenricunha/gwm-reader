@@ -1,0 +1,50 @@
+{"label":"a uppercase host","guard":"ALLOWED:acquireVehicles","sent_path":"/app-api/api/v1.0/globalapp/vehicle/acquireVehicles","sent_host":"br-app-gateway.gwmcloud.com"}
+{"label":"b trailing-dot host","guard":"BLOCKED","reason":"request blocked by the route allowlist: GET br-app-gateway.gwmcloud.com./app-api/api/v1.0/globalapp/vehicle/ac"}
+{"label":"c encoded slash in path","guard":"BLOCKED","reason":"request blocked by the route allowlist: GET br-app-gateway.gwmcloud.com/app-api/api/v1.0/globalapp%2Fvehicle/a"}
+{"label":"d dot segments","guard":"ALLOWED:acquireVehicles","sent_path":"/app-api/api/v1.0/globalapp/vehicle/acquireVehicles","sent_host":"br-app-gateway.gwmcloud.com"}
+{"label":"d2 encoded dot segments","guard":"ALLOWED:acquireVehicles","sent_path":"/app-api/api/v1.0/globalapp/vehicle/acquireVehicles","sent_host":"br-app-gateway.gwmcloud.com"}
+{"label":"e explicit :443","guard":"ALLOWED:acquireVehicles","sent_path":"/app-api/api/v1.0/globalapp/vehicle/acquireVehicles","sent_host":"br-app-gateway.gwmcloud.com"}
+{"label":"e2 port 8443","guard":"BLOCKED","reason":"request blocked by the route allowlist: GET br-app-gateway.gwmcloud.com:8443/app-api/api/v1.0/globalapp/vehicl"}
+{"label":"f http scheme","guard":"BLOCKED","reason":"request blocked by the route allowlist: GET br-app-gateway.gwmcloud.com/app-api/api/v1.0/globalapp/vehicle/acq"}
+{"label":"f2 other gwmcloud host","guard":"BLOCKED","reason":"request blocked by the route allowlist: GET br-front-service.gwmcloud.com/app-api/api/v1.0/globalapp/vehicle/a"}
+{"label":"g duplicate vin","guard":"BLOCKED","reason":"request blocked by the route allowlist: getLastStatus: repeated query field \"vin\""}
+{"label":"g2 reordered query","guard":"ALLOWED:getLastStatus","sent_path":"/app-api/api/v1.0/vehicle/getLastStatus?flag=true&vin=TESTVIN9XK2PQ7RZ4","sent_host":"br-app-gateway.gwmcloud.com"}
+{"label":"g3 vin with injected param","guard":"BLOCKED","reason":"request blocked by the route allowlist: getLastStatus: query field \"vin\" has an unexpected value"}
+{"label":"g4 lowercase vin","guard":"BLOCKED","reason":"request blocked by the route allowlist: getLastStatus: query field \"vin\" has an unexpected value"}
+{"label":"h query key constructor","guard":"BLOCKED","reason":"request blocked by the route allowlist: acquireVehicles: repeated query field \"constructor\""}
+{"label":"i login body with own __proto__ key","guard":"BLOCKED","reason":"request blocked by the route allowlist: loginAccount: body fields must be exactly [deviceid, password, account"}
+{"label":"j login exact body","guard":"ALLOWED:loginAccount","sent_path":"/br-official-commerce/br-official-gateway/pc-api/api/v1.0/userAuth/loginAccount","sent_host":"br-front-service.gwmcloud.com"}
+{"label":"k lowercase method","guard":"ALLOWED:loginAccount","sent_path":"/br-official-commerce/br-official-gateway/pc-api/api/v1.0/userAuth/loginAccount","sent_host":"br-front-service.gwmcloud.com"}
+{"label":"l sendCmd path","guard":"BLOCKED","reason":"request blocked by the route allowlist: POST br-app-gateway.gwmcloud.com/app-api/api/v1.0/vehicle/T5/sendCmd i"}
+{"label":"m credentials in URL","guard":"BLOCKED","reason":"request blocked by the route allowlist: credentials or fragments in the URL"}
+{"label":"n login with query","guard":"BLOCKED","reason":"request blocked by the route allowlist: loginAccount: query fields must be exactly []"}
+{"label":"o body with inherited toJSON (guard sees own fields)","guard":"ALLOWED:loginAccount","sent_path":"/br-official-commerce/br-official-gateway/pc-api/api/v1.0/userAuth/loginAccount","sent_host":"br-front-service.gwmcloud.com"}
+{"label":"o serialized form of that body","json":"{\"account\":\"x\",\"injected\":\"field\"}"}
+{"isGwmCloudHost":"gwmcloud.com","result":true}
+{"isGwmCloudHost":"GWMCLOUD.COM","result":true}
+{"isGwmCloudHost":"x.gwmcloud.com.","result":true}
+{"isGwmCloudHost":"x.gwmcloud.com..","result":true}
+{"isGwmCloudHost":"gwmcloud.com.evil.test","result":false}
+{"isGwmCloudHost":"evilgwmcloud.com","result":false}
+{"isGwmCloudHost":"47.0.0.1","result":false}
+{"isGwmCloudHost":"[::1]","result":false}
+{"url_variant":"https://br-app-gateway<U+3002>gwmcloud.com/x","hostname":"br-app-gateway.gwmcloud.com","isGwmCloudHost":true}
+{"url_variant":"https://br-app-gateway.gwmcloud.com%2E/x","hostname":"br-app-gateway.gwmcloud.com.","isGwmCloudHost":true}
+{"url_variant":"https://br-app-gateway.GWMCLOUD.com/x","hostname":"br-app-gateway.gwmcloud.com","isGwmCloudHost":true}
+{"url_variant":"https://0x7f000001/x","hostname":"127.0.0.1","isGwmCloudHost":false}
+{"label":"G1 defaults, live unset","mode":"disabled","run":false,"liveAllowed":false}
+{"label":"G2 live TRUE (uppercase)","mode":"disabled","run":false,"liveAllowed":false}
+{"label":"G3 live true","mode":"live","run":true,"liveAllowed":true}
+{"label":"G4 only API base overridden to mock","mode":"disabled","run":false,"liveAllowed":false}
+{"label":"G5 both overridden to non-gwmcloud","mode":"fixture","run":true,"liveAllowed":false}
+{"label":"G6 both overridden, one is gwmcloud trailing dot","mode":"disabled","run":false,"liveAllowed":false}
+{"label":"G7 both overridden, one gwmcloud via U+3002","mode":"disabled","run":false,"liveAllowed":false}
+{"label":"G8 both overridden to IP literals (fixture by design)","mode":"fixture","run":true,"liveAllowed":false}
+{"label":"G9 http to gwmcloud","error":"GWM_LOGIN_URL: plain http:// is allowed only for a local mock"}
+{"transport":"https://x.gwmcloud.com./p","result":"REFUSED","errorClass":"live_disabled"}
+{"transport":"https://X.GWMCLOUD.COM/p","result":"REFUSED","errorClass":"live_disabled"}
+{"transport":"https://x<U+3002>gwmcloud.com/p","result":"REFUSED","errorClass":"live_disabled"}
+{"transport":"http://x.gwmcloud.com/p","result":"REFUSED","errorClass":"live_disabled"}
+{"transport":"ftp://x.test/p","result":"REFUSED","errorClass":"config"}
+{"header_crlf":"REJECTED","name":"TypeError","code":"ERR_INVALID_CHAR","message":"Invalid character in header content [\"x-test\"]"}
+{"wire":[{"method":"GET","url":"/app-api/api/v1.0/vehicle/getLastStatus?flag=true&vin=TESTVIN9XK2PQ7RZ4","host":"127.0.0.1:39345"}]}

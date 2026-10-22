@@ -1,0 +1,49 @@
+== clone refs ==
+origin ee85725
+origin/hardened ee85725
+origin/main bafa10e
+fatal: a branch named 'hardened' already exists
+hardened HEAD: ee85725
+== hardened tree .github ==
+.github/dependabot.yml
+.github/workflows/ci.yml
+== Scenario A: git merge fake-upstream-a into hardened ==
+Merge made by the 'ort' strategy.
+ .github/workflows/release.yml | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+ create mode 100644 .github/workflows/release.yml
+merge exit: 0
+conflicts: 0
+hardened tree .github after merge:
+.github/dependabot.yml
+.github/workflows/ci.yml
+.github/workflows/release.yml
+name: release
+on: {push: {branches: [main, hardened]}}
+permissions: {contents: write, packages: write, id-token: write}
+readonly scan root listing (haval-h6-mqtt/*.js, non-recursive) contains .github? ->
+top-level js files: 14
+.github entries under scan root: 0
+== Scenario B: git merge fake-upstream-b into hardened ==
+CONFLICT (modify/delete): .github/workflows/docker-build-publish.yml deleted in HEAD and modified in fake-upstream-b.  Version fake-upstream-b of .github/workflows/docker-build-publish.yml left in tree.
+Automatic merge failed; fix conflicts and then commit the result.
+conflicts: .github/workflows/docker-build-publish.yml
+== Scenario C: main fast-forwarded to upstream; workflows on main ==
+.github/workflows/docker-build-publish.yml
+.github/workflows/release.yml
+-- .github/workflows/docker-build-publish.yml
+8:on:  
+9:  push:
+10:    branches: [ "main" ]
+12:    tags: [ 'v*.*.*' ]
+14:    branches: [ "main" ]
+29:      packages: write
+32:      id-token: write
+82:          push: ${{ github.event_name != 'pull_request' }}
+83:          tags: ${{ steps.meta.outputs.tags }}, ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest, ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.CURRENT_DATE }}
+-- .github/workflows/release.yml
+2:on: {push: {branches: [main, hardened]}}
+3:permissions: {contents: write, packages: write, id-token: write}
+== hardened .github/dependabot.yml target-branch ==
+target-branch lines: 0
+dependabot.yml on main: absent

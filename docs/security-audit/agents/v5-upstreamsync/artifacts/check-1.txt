@@ -1,0 +1,15 @@
+== independent fixture (v5-upstreamsync): host git, hooks off, no global/system config, no network, no target code run ==
+hd HEAD: ee85725
+up (== main) HEAD: bafa10e
+Merge made by the 'ort' strategy.
+ .github/workflows/x.yml | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+ create mode 100644 .github/workflows/x.yml
+merge exit: 0
+unmerged paths: 0
+== .github/workflows on merged hd ==
+.github/workflows/ci.yml
+.github/workflows/x.yml
+== scan root files (haval-h6-mqtt top-level *.js) include any .github path? ==
+0
+== docker-build-publish.yml on hd after merge (expected absent): 0 ==

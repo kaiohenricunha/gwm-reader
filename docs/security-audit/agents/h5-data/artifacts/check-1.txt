@@ -1,0 +1,53 @@
+globs ["binary_sensor.gwmbrasil_*_estado_da_trava","binary_sensor.gwmbrasil_*_porta_*","sensor.gwmbrasil_*_vidro_*","sensor.gwmbrasil_*_posicao_do_teto_solar","device_tracker.gwmbrasil_*","sensor.gwmbrasil_*_status_message"]
+EXCLUDED 13
+  x binary_sensor.gwmbrasil_h6_porta_malas <- binary_sensor.gwmbrasil_*_porta_*
+  x binary_sensor.gwmbrasil_h6_porta_dianteira_esquerda <- binary_sensor.gwmbrasil_*_porta_*
+  x binary_sensor.gwmbrasil_h6_porta_traseira_esquerda <- binary_sensor.gwmbrasil_*_porta_*
+  x binary_sensor.gwmbrasil_h6_porta_dianteira_direita <- binary_sensor.gwmbrasil_*_porta_*
+  x binary_sensor.gwmbrasil_h6_porta_traseira_direita <- binary_sensor.gwmbrasil_*_porta_*
+  x binary_sensor.gwmbrasil_h6_estado_da_trava <- binary_sensor.gwmbrasil_*_estado_da_trava
+  x sensor.gwmbrasil_h6_vidro_dianteiro_esquerdo <- sensor.gwmbrasil_*_vidro_*
+  x sensor.gwmbrasil_h6_vidro_dianteiro_direito <- sensor.gwmbrasil_*_vidro_*
+  x sensor.gwmbrasil_h6_vidro_traseiro_esquerdo <- sensor.gwmbrasil_*_vidro_*
+  x sensor.gwmbrasil_h6_vidro_traseiro_direito <- sensor.gwmbrasil_*_vidro_*
+  x sensor.gwmbrasil_h6_posicao_do_teto_solar <- sensor.gwmbrasil_*_posicao_do_teto_solar
+  x sensor.gwmbrasil_h6_status_message <- sensor.gwmbrasil_*_status_message
+  x device_tracker.gwmbrasil_h6_location <- device_tracker.gwmbrasil_*
+RECORDED 36
+  r sensor.gwmbrasil_h6_autonomia_combustao 
+  r sensor.gwmbrasil_h6_autonomia_ev 
+  r binary_sensor.gwmbrasil_h6_aquecimento_da_cabine 
+  r sensor.gwmbrasil_h6_estado_de_carga_12v 
+  r sensor.gwmbrasil_h6_estado_de_carga_soc 
+  r sensor.gwmbrasil_h6_tempo_de_carga 
+  r binary_sensor.gwmbrasil_h6_agendamento_de_carga 
+  r sensor.gwmbrasil_h6_nivel_de_combustivel 
+  r sensor.gwmbrasil_h6_estado_da_carga 
+  r sensor.gwmbrasil_h6_temperatura_das_baterias 
+  r binary_sensor.gwmbrasil_h6_estado_do_controle_de_carga 
+  r binary_sensor.gwmbrasil_h6_aquecimento_do_volante 
+  r binary_sensor.gwmbrasil_h6_filtragem_do_ar_do_cockpit 
+  r sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_esquerdo 
+  r sensor.gwmbrasil_h6_pressao_do_pneu_dianteiro_direito 
+  r sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_esquerdo 
+  r sensor.gwmbrasil_h6_pressao_do_pneu_traseiro_direito 
+  r sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_esquerdo 
+  r sensor.gwmbrasil_h6_temperatura_do_pneu_dianteiro_direito 
+  r sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_esquerdo 
+  r sensor.gwmbrasil_h6_temperatura_do_pneu_traseiro_direito 
+  r sensor.gwmbrasil_h6_quilometragem_total 
+  r sensor.gwmbrasil_h6_temperatura_da_cabine 
+  r binary_sensor.gwmbrasil_h6_estado_do_ar_condicionado 
+  r binary_sensor.gwmbrasil_h6_estado_do_purificador_de_ar 
+  r binary_sensor.gwmbrasil_h6_estado_do_desembacador_traseiro 
+  r binary_sensor.gwmbrasil_h6_aquecimento_do_banco_do_motorista 
+  r binary_sensor.gwmbrasil_h6_aquecimento_do_banco_do_passageiro 
+  r binary_sensor.gwmbrasil_h6_estado_do_desembacador_dianteiro 
+  r sensor.gwmbrasil_h6_estado_do_motor 
+  r sensor.gwmbrasil_h6_modelo_do_veiculo 
+  r sensor.gwmbrasil_h6_cor_do_veiculo 
+  r sensor.gwmbrasil_h6_capacidade_do_tanque 
+  r sensor.gwmbrasil_h6_tipo_de_motor 
+  r sensor.gwmbrasil_h6_historico_de_carregamento (attrs)
+  r sensor.gwmbrasil_h6_erro_do_leitor (attrs)
+SNAPSHOT {"schema":"kinestra.mygwm.status.v1","device":"h6","collected_at":"2025-10-09T08:53:20Z","acquisition_time":null,"update_time":null,"upload_time":null,"hy_eng_sts":null,"vehicle":{"model":"HAVAL H6","tank_capacity_l":null},"items":[{"code":"2208001","value":"0","unit":null},{"code":"9999999","value":"DUMMYUNMAPPED","unit":"-"}]}

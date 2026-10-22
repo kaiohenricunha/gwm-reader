@@ -1,0 +1,20 @@
+baseline_mixed_text n=2000 ms=0.34
+baseline_mixed_text n=4000 ms=0.06
+baseline_mixed_text n=8000 ms=0.11
+baseline_mixed_text n=16000 ms=0.23
+EMAIL_alnum_run n=2000 ms=1.60
+EMAIL_alnum_run n=4000 ms=6.55
+EMAIL_alnum_run n=8000 ms=77.21
+EMAIL_alnum_run n=16000 ms=209.58
+COORD_PAIR_spaces n=2000 ms=1.97
+COORD_PAIR_spaces n=4000 ms=5.94
+COORD_PAIR_spaces n=8000 ms=77.75
+COORD_PAIR_spaces n=16000 ms=202.86
+JWT_eyJ_repeat n=2000 ms=2.61
+JWT_eyJ_repeat n=4000 ms=11.57
+JWT_eyJ_repeat n=8000 ms=101.71
+JWT_eyJ_repeat n=16000 ms=386.34
+registerSecret_unique n=1000 ms=8.21 then_one_redactString_ms=0.133
+registerSecret_unique n=2000 ms=20.16 then_one_redactString_ms=0.108
+registerSecret_unique n=4000 ms=194.94 then_one_redactString_ms=0.285
+registerSecret_unique n=8000 ms=771.77 then_one_redactString_ms=0.207

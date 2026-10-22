@@ -1,0 +1,28 @@
+{
+  "run_id": "gwm-reader-run-1",
+  "repo": "kaiohenricunha/gwm-reader",
+  "source_ref": {
+    "commit": "ee85725120b7800b636013de5f7ad36558dc592d",
+    "branch": "hardened",
+    "dirty": false
+  },
+  "profile": "standard",
+  "scope_paths": [
+    "."
+  ],
+  "budget": 30,
+  "budget_note": "Parent-proposed budget raised from 24 to 30 after wave 2 so that wave 3, both critics and every candidate verifier fit; the user set no budget.",
+  "agents_spent": 29,
+  "execution_policy": "sandboxed-source-and-local-only",
+  "companion_files": [
+    "PROTOCOLS-RPC-AND-MESSAGING.md",
+    "CLOUD-AND-DEPLOYMENT.md",
+    "SUPPLY-CHAIN-AND-RELEASE.md",
+    "WEB-PROTOCOL-AND-AUTH.md",
+    "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md"
+  ],
+  "prior_runs": [],
+  "run_status": "complete",
+  "coverage_critic_result": "critic-4 post-wave and critic-final final-clean both returned stop:true with no accepted work",
+  "target": "(repository root)"
+}

@@ -1,0 +1,5 @@
+regex1 present verbatim: true
+regex2 present verbatim: true
+template_line: raw_matches=true stripped_matches=false stripped="const u = `${base}\n"
+glob_span: raw_matches=true stripped_matches=false stripped="const topic = \"gwmbrasil\";\n"
+plain_control: raw_matches=true stripped_matches=true stripped="client.sendCmd(u);\n"

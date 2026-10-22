@@ -1,0 +1,738 @@
+[
+  {
+    "verdict": "confirmed",
+    "fingerprint": "haval-h6-mqtt/carTextUtil.js:status_message:unescaped-gwm-value-in-pipe-delimited-markdown",
+    "title": "GWM tire-temperature value injects markdown and forged records into status_message, which the shipped HA markdown card renders",
+    "description": "carTextUtil builds status_message codes as '@'-separated fields joined by newlines, and the reader replaces the newlines with ' | ' before it publishes the retained gwmbrasil/<id>/status_message/state message. The tire-temperature value from getLastStatus goes into the TIRE_PRESSURE record raw, with no numeric check and no escaping. The shipped ha/dashboard.yaml splits the state on '|' and '@' and interpolates the parts into a type: markdown card without escaping. A GWM value can therefore put markdown links and remote images into the owner's HA UI in two ways: directly through partes[3] of the TIRE_PRESSURE record (no delimiter needed), or by adding a '|' that forges an extra record, which reaches the raw '\u2022 {{ item }}' fallback. The examples are a fake 'update your GWM account' phishing link and a remote image that tells an arbitrary host the browser IP and view times. Forged fixed alert codes give no gain, because GWM already controls those states. The gain is the markup and the external URLs. Lower-impact variants: the raw api code goes into the retained reader_error attributes (reader.js:186), and appShowSeriesName goes into model/state and the discovery device name (mqtt.js:72), where JSON serialization prevents structural injection.",
+    "root_cause": "getVehicleStatusHardAnalysis interpolates the GWM tire-temperature value into a delimiter-based record format without a numeric check and without escaping '@', '|', newlines or markdown (carTextUtil.js:35-36,109,136; reader.js:228). The shipped dashboard renders the parsed parts, and any unknown record, as markdown without escaping or validation (ha/dashboard.yaml:856,861,893,899 and 1530,1535,1567,1573).",
+    "intended_behavior": "Values that GWM controls in status_message are numeric or limited to a safe character set, so they cannot add records or markup. The dashboard renders record arguments as validated text and does not render unknown records.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "haval-h6-mqtt/carConnector.js",
+        "line": 258,
+        "scope": "GwmClient.getLastStatus",
+        "description": "Returns the GWM status data object after only an object-type check (line 257). The item values are not validated."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 41,
+        "scope": "statusBySlug",
+        "description": "Copies each raw item value under the fixed map.js slug, for example temperatura_do_pneu_dianteiro_direito for code 2101006."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/carTextUtil.js",
+        "line": 109,
+        "scope": "getVehicleStatusHardAnalysis.checkTirePressure",
+        "description": "A pressure outside 35-39 psi (map.js:40-41) pushes TIRE_PRESSURE with the raw tireTemperature.value. The analysis runs when item 2210001 is present with any value (line 46)."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/carTextUtil.js",
+        "line": 36,
+        "scope": "UserMessages.TIRE_PRESSURE",
+        "description": "Formats `TIRE_PRESSURE@${desc}@${psi}@${tempValue}${tempUnit}` and does not escape '@', '|' or markdown."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 228,
+        "scope": "Reader.publishStatus",
+        "description": "Replaces newlines with ' | ' and publishes status_message retained to gwmbrasil/<id>/status_message/state."
+      },
+      {
+        "kind": "propagation",
+        "file": "ha/dashboard.yaml",
+        "line": 861,
+        "scope": "status markdown card",
+        "description": "raw.split('|') turns an attacker '|' into a separate record; item.split('@') gives partes."
+      },
+      {
+        "kind": "sink",
+        "file": "ha/dashboard.yaml",
+        "line": 893,
+        "scope": "status markdown card",
+        "description": "'{{ partes[3] }}' writes the raw GWM temperature into type: markdown content (line 856). An unknown forged record reaches '\u2022 {{ item }}' at line 899. The duplicate card has the same sinks at lines 1567 and 1573."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "ha/dashboard.yaml",
+        "line": 856,
+        "description": "The status card is type: markdown, so the interpolated content renders as markdown. The duplicate card is at line 1530."
+      },
+      {
+        "file": "ha/dashboard.yaml",
+        "line": 899,
+        "description": "The else branch renders the whole unknown record with '\u2022 {{ item }}' and no escaping."
+      },
+      {
+        "file": "haval-h6-mqtt/carTextUtil.js",
+        "line": 136,
+        "description": "Records are joined with '\\n', which the reader turns into the ' | ' separator that the dashboard splits on."
+      },
+      {
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 64,
+        "description": "status_message is a plain sensor with no device_class, so HA keeps a non-numeric text state. Discovery maps it to sensor.gwmbrasil_h6_status_message, the entity that the dashboard reads (check-1 V0)."
+      },
+      {
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 220,
+        "description": "The same raw value is also published retained as the temperature sensor state."
+      },
+      {
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 186,
+        "description": "Variant: errorClass api_<raw body.code> is published retained in the reader_error attributes, not redacted and not bounded."
+      },
+      {
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 72,
+        "description": "Variant: the GWM model string becomes device.name. JSON serialization (mqtt.js:138) prevents structural injection."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "third_party_dependency",
+        "description": "The GWM API, or a party trusted for its TLS host, returns the crafted temperature value. Home Assistant's markdown card renders markdown links and images. The HA frontend sanitizer, any CSP, and the 255-character state limit are outside this repository and bound the payload to links and images, not script. The observed payloads are 159-179 characters."
+      },
+      {
+        "kind": "system_configuration",
+        "description": "The owner has installed the shipped ha/dashboard.yaml."
+      },
+      {
+        "kind": "data_state",
+        "description": "Status includes window item 2210001 (any value, so the analysis runs), a front-right pressure outside 35-39 psi, and the temperature item 2101006. GWM controls all of these."
+      },
+      {
+        "kind": "user_interaction",
+        "description": "The owner opens the dashboard, which loads remote images. A phishing link needs a click."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "A lower-trust GWM API endpoint that returns a well-formed getLastStatus response.",
+      "payloads": [
+        "{\"description\":\"SUCCESS\",\"data\":{\"items\":[{\"code\":\"2210001\",\"value\":\"1\"},{\"code\":\"2101002\",\"value\":\"100\"},{\"code\":\"2101006\",\"value\":\"20 | [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)\"}]}}",
+        "{\"description\":\"SUCCESS\",\"data\":{\"items\":[{\"code\":\"2210001\",\"value\":\"1\"},{\"code\":\"2101002\",\"value\":\"100\"},{\"code\":\"2101006\",\"value\":\"20 [Atualize](https://example.invalid/l) ![](https://example.invalid/b.png)\"}]}}"
+      ],
+      "instructions": [
+        "In a no-network, read-only container, build the real GwmClient and Reader with an in-memory http.request stub (a successful login, one vehicle with a dummy VIN, and the payload as getLastStatus) and an in-memory publisher.",
+        "Run Reader.pollStatus() once. Read the retained payload published to gwmbrasil/h6/status_message/state, and apply the branch selection of ha/dashboard.yaml:858-899 (split on '|', then on '@')."
+      ],
+      "observed_result": "agents/v1-havalh6mqtt/artifacts/check-1.txt: V1_pipe 'topic=gwmbrasil/h6/status_message/state retain=true len=179' and dashboard_branches 'TIRE_PRESSURE partes[3]=\"20 \"', 'ELSE item=\" [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)\u00b0C \"', 'TIRE_PRESSURE_DEFAULTS'. V2_nopipe (no '|') 'TIRE_PRESSURE partes[3]=\"20 [Atualize](https://example.invalid/l) ![](https://example.invalid/b.png)\u00b0C \"'. V3 control with numeric '20' gives 'TIRE_PRESSURE partes[3]=\"20\u00b0C \"'. The HA markdown rendering itself was not executed."
+    },
+    "remediation": {
+      "strategy": "Accept only finite numeric values for the tire temperature, and validate every other value placed in status_message. Strip '|', '@', CR and LF from any value placed in status_message. In the dashboard, remove the raw '{{ item }}' fallback and reduce partes[n] to a safe character set before rendering. Add a reader test in which a temperature with '|' and markdown yields exactly one TIRE_PRESSURE record with a placeholder value.",
+      "code_changes": [
+        {
+          "file_name": "haval-h6-mqtt/carTextUtil.js",
+          "fixed_code": "const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : \"?\"; };\n// in checkTirePressure:\nstatusMessage.push(msgs.TIRE_PRESSURE(tirePressure.description, psiPressure, num(tireTemperature.value), tireTemperature.unit));"
+        },
+        {
+          "file_name": "ha/dashboard.yaml",
+          "fixed_code": "{% elif codigo == 'TIRE_PRESSURE' and partes|length >= 4 %}\n  \u2022 A {{ partes[1] }} est\u00e1 em {{ partes[2] | int(0) }} psi com temperatura de {{ partes[3] | regex_replace('[^0-9.,\u00b0C -]', '') }}.\n...\n{% else %}\n  {# unknown record: not rendered #}\n{% endif %}"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "The value must come from the GWM cloud itself, or from a party trusted for its TLS host, and the owner must use the shipped dashboard."
+      },
+      "impact": {
+        "score": "low",
+        "reason": "Content spoofing with a phishing link and a remote-image beacon in the owner's own HA UI. There is no script execution, credential access, MQTT topic control or vehicle effect."
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "medium",
+      "reason": "An independent sandboxed run through the real GwmClient and Reader observed the raw markdown and the forged record in the retained status_message state, and a numeric control stayed clean. The HA markdown-card rendering of links and images is documented third-party behavior and was not executed."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "haval-h6-mqtt/logger.js:redactString:quadratic-regex-on-unbounded-gwm-api-code",
+    "title": "Unbounded GWM body.code drives quadratic regex backtracking in redactString and blocks the reader event loop",
+    "description": "GwmClient.parse copies body.code from any GWM response into apiCode with no length or shape check (carConnector.js:150). On the vehicle endpoints, a 2xx envelope with description != SUCCESS and null data makes requireData throw a GwmError whose errorClass is `api_<code>` (carConnector.js:227). This path has no login cap and runs on every status poll. Reader.onFailure logs the error (reader.js:185). safeError copies errorClass into error_class, and the logger's redact() runs redactString on that string field. The unanchored EMAIL regex, with an unbounded greedy local part, backtracks quadratically on a long run of letters with no '@'; JWT and COORD_PAIR have the same shape for other inputs. The only size bound is the 4 MiB response cap; the Squid proxy is CONNECT-only and cannot bound bodies. Verified locally at 0.5 CPU through the real GwmClient, Reader, logger and mqtt.js publisher on the getLastStatus path: cost grows 4x per doubling (64000 chars: 26.9 s per poll), and the event loop stalled for 28 s. During the stall, a real Mosquitto 2.1.2 broker dropped the reader ('exceeded timeout') and delivered the retained LWT 'offline'. After the stall, mqtt.js reconnected but the reader did not publish 'online' again (it does so only in Reader.start, reader.js:83). So every HA entity, which uses that availability topic, stays unavailable until a restart. The reader then published the raw, unbounded error_class retained to reader_error/attributes. Derived, not executed: a code near the 4 MiB cap would block the single event loop for about 30 hours at 0.5 CPU, and each later poll with the same response starts a new block. The container has restart: on-failure and no healthcheck, so a blocked but live process is not restarted.",
+    "root_cause": "parse() accepts body.code of any length and shape (carConnector.js:150), unlike the 200-char slice in toGwmError (httpClient.js:173), and requireData puts it in errorClass (carConnector.js:227). redactString then runs regexes with unbounded greedy quantifiers and no anchors over the full string, with no input-size cap (logger.js:18,20,25,76-88).",
+    "intended_behavior": "Each poll does bounded, near-linear work in the GWM response size. GWM API codes are validated as short tokens before they enter error classes, logs or retained MQTT attributes, and log redaction uses bounded quantifiers on input capped to a fixed length.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "haval-h6-mqtt/httpClient.js",
+        "line": 151,
+        "scope": "createHttpClient.request",
+        "description": "The GWM response body, up to MAX_BODY_BYTES (4 MiB, httpClient.js:21,145), resolves as text to the caller."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/carConnector.js",
+        "line": 150,
+        "scope": "GwmClient.parse",
+        "description": "apiCode = String(body.code) with no length or format check; a 2xx status with an unknown code passes every parse() branch."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/carConnector.js",
+        "line": 256,
+        "scope": "GwmClient.getLastStatus",
+        "description": "Every status poll passes the parsed envelope to requireData; no login limiter applies to this call."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/carConnector.js",
+        "line": 227,
+        "scope": "GwmClient.requireData",
+        "description": "description != SUCCESS with null data throws GwmError with errorClass `api_${apiCode}` of unbounded length."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 185,
+        "scope": "Reader.onFailure",
+        "description": "log.warn('poll failed', {...safeError(err)}); safeError sets error_class from err.errorClass (logger.js:93,104)."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 144,
+        "scope": "createLogger.emit",
+        "description": "redact(fields) walks the object; error_class is not a sensitive key, so redact calls redactString on it (logger.js:112,121)."
+      },
+      {
+        "kind": "sink",
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 83,
+        "scope": "redactString",
+        "description": "out.replace(EMAIL, ...) with EMAIL = /[A-Za-z0-9._%+-]+@.../g rescans to the end of the letter run from every start position: quadratic, synchronous work on the single event loop."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "haval-h6-mqtt/httpClient.js",
+        "line": 21,
+        "description": "MAX_BODY_BYTES = 4 MiB is the only size bound on GWM response content; proxy/squid.conf is CONNECT-only (lines 10-17) and cannot inspect bodies."
+      },
+      {
+        "file": "haval-h6-mqtt/httpClient.js",
+        "line": 173,
+        "description": "The sibling transport-error path slices its message to 200 chars; parse() has no equivalent cap on apiCode."
+      },
+      {
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 20,
+        "description": "EMAIL regex has an unbounded greedy local part and no anchor. check-1: 'EMAIL_only_64000_ms=25596.38' against 'EMAIL_bounded_{1,64}_64000_ms=167.65'."
+      },
+      {
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 18,
+        "description": "The JWT regex has the same unbounded shape and rescans from each 'eyJ' start."
+      },
+      {
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 25,
+        "description": "COORD_PAIR \\s*[,;/ ]\\s* is ambiguous over runs of spaces."
+      },
+      {
+        "file": "haval-h6-mqtt/logger.js",
+        "line": 76,
+        "description": "redactString has no input-length cap before the regex chain at lines 81-88."
+      },
+      {
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 186,
+        "description": "publishReaderError runs after the blocking log call and publishes the raw error_class retained (reader.js:206). check-3 subscriber received it as gwmbrasil/h6/reader_error/attributes."
+      },
+      {
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 83,
+        "description": "'online' is published only in Reader.start; after the LWT fires and mqtt.js reconnects, availability stays 'offline' (check-3)."
+      },
+      {
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 122,
+        "description": "The retained LWT 'offline' on the availability topic; mqtt.js 5.16.0 default keepalive is 60 s (no override in createPublisher, lines 114-123)."
+      },
+      {
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 73,
+        "description": "Every discovery entity uses availability_topic, so the LWT makes all HA entities unavailable."
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 29,
+        "description": "gwm-reader has restart: on-failure and no healthcheck (healthchecks exist only at lines 70 and 90 for other services), so a blocked but live process is not restarted."
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 54,
+        "description": "The 0.5 CPU limit matches the sandbox limit used in all three checks."
+      },
+      {
+        "file": "haval-h6-mqtt/carConnector.js",
+        "line": 177,
+        "description": "The login-rejection variant reaches the same sink through the message, but LoginLimiter caps it at 3 per hour (backoff.js:57) and auth failures halt the reader."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "third_party_dependency",
+        "description": "The GWM API endpoint, or a party that presents a certificate trusted for that host (system roots plus an optional GWM_EXTRA_CA_FILE), returns the hostile envelope. In fixture mode, the owner-configured fixture host can do the same."
+      },
+      {
+        "kind": "data_state",
+        "description": "A vehicle endpoint (getLastStatus on every poll, acquireVehicles, or getChargeLogs) returns HTTP 2xx with description != SUCCESS, null data, and a long string code that is not in AUTH_CODES, RATE_LIMIT_CODES or BUSY_CODES."
+      },
+      {
+        "kind": "system_configuration",
+        "description": "Live mode is enabled (GWM_LIVE_ENABLED=true) with a valid session, or fixture mode points at a lower-trust host; LOG_LEVEL is WARN, INFO or DEBUG (the compose default is INFO), so the poll-failed warning is emitted."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "A lower-trust GWM API endpoint that returns a well-formed 2xx JSON envelope with an oversized code string to a status poll.",
+      "payloads": [
+        "getLastStatus response: {\"code\":\"<'a' repeated n times>\",\"description\":\"FAIL\",\"data\":null}, n = 4000, 8000, 16000, 32000, 64000",
+        "redactString(\"api_\" + \"a\".repeat(n)) for the same n"
+      ],
+      "instructions": [
+        "In a no-network container (node:24.22.0-alpine3.23, 0.5 CPU, 256 MiB, read-only target), require haval-h6-mqtt/logger.js and time redactString on the error_class shape for each n (check-1).",
+        "Build the real GwmClient and Reader with an in-memory http.request stub: loginAccount returns SUCCESS with a dummy JWT, acquireVehicles returns one dummy vehicle, and getLastStatus returns the payload. Use the real createLogger and an in-memory publisher. Time Reader.pollStatus for each n and read the retained reader_error attributes (check-2).",
+        "Start eclipse-mosquitto 2.1.2 with --network none and default local-only config, a mosquitto_sub on gwmbrasil/h6/availability and gwmbrasil/h6/reader_error/#, and a reader process in the same loopback namespace that uses the real createPublisher (keepalive lowered to 5 s through the injectable connect, only to fit the wall clock). Publish 'online', run one pollStatus with n = 64000, and record broker, subscriber and event-loop gap output (check-3)."
+      ],
+      "observed_result": "check-1 (agents/v2-havalh6mqtt/artifacts/check-1.txt): redactString api_+a*n ms = 114.43 / 421.86 / 1659.39 / 6703.96 / 26600.54 for n = 4000..64000 (linear baseline 0.70-13.40 ms); EMAIL alone at 64000 = 25596.38 ms, EMAIL with a {1,64} bound = 167.65 ms. check-2 (agents/v2-havalh6mqtt/artifacts/check-2.txt): 'getLastStatus code_len=64000 pollStatus_ms=26896.9 ... reader_error_retain=true error_class_len=64004', 4x per doubling, with http_calls [loginAccount, acquireVehicles, getLastStatus] and logins 1. check-3 (agents/v2-havalh6mqtt/artifacts/check-3.txt): reader 'max_event_loop_gap_ms=28009'; broker '1792678780: Client gwm-reader-h6 [127.0.0.1:45120] disconnected: exceeded timeout.'; subscriber '[1792678780] SUB gwmbrasil/h6/availability offline', then at 1792678806 'reader_error/state retrying' and attributes with the raw 'api_aaaa...' error_class; no 'online' was published after the reconnect. The duration at the 4 MiB cap (about 30 h) is extrapolated from the observed quadratic curve, not executed."
+    },
+    "remediation": {
+      "strategy": "Validate GWM API codes in parse() as short tokens and replace any other value with a constant, so error classes, logs and retained attributes stay bounded. In logger.js, bound every regex quantifier and cap redactString input to a fixed length after the exact-secret pass, cutting back to a non-token character with a linear scan (not a regex). Optionally publish 'online' again on every MQTT connect. Add regression tests: redactString(\"a\".repeat(1 << 20)) and a Reader poll whose getLastStatus code is 1 MiB both finish in well under 100 ms, and error_class in reader_error attributes is at most 20 chars.",
+      "code_changes": [
+        {
+          "file_name": "haval-h6-mqtt/carConnector.js",
+          "fixed_code": "const rawCode = body && body.code !== undefined && body.code !== null ? String(body.code) : undefined;\nconst apiCode = rawCode === undefined ? undefined : /^[A-Za-z0-9_-]{1,16}$/.test(rawCode) ? rawCode : \"invalid\";"
+        },
+        {
+          "file_name": "haval-h6-mqtt/logger.js",
+          "fixed_code": "const JWT = /eyJ[A-Za-z0-9_-]{4,2048}\\.[A-Za-z0-9_-]{4,2048}\\.[A-Za-z0-9_-]{0,2048}/g;\nconst EMAIL = /[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\\.[A-Za-z]{2,63}/g;\nconst COORD_PAIR = /-?\\d{1,3}\\.\\d{3,12}[ \\t]{0,3}[,;/ ][ \\t]{0,3}-?\\d{1,3}\\.\\d{3,12}/g;\nconst MAX_REDACT_CHARS = 4096;\nconst TOKEN_CHAR = /[A-Za-z0-9._%+@*-]/;\n\nfunction truncate(s) {\n  if (s.length <= MAX_REDACT_CHARS) return s;\n  let end = MAX_REDACT_CHARS;\n  while (end > 0 && TOKEN_CHAR.test(s[end - 1])) end--; // never keep a cut token\n  return s.slice(0, end) + \"[TRUNCATED]\";\n}\n\nfunction redactString(s) {\n  let out = String(s);\n  for (const v of sorted) {\n    if (out.includes(v)) out = out.split(v).join(REDACTED);\n  }\n  return truncate(out)\n    .replace(JWT, REDACTED)\n    .replace(EMAIL, REDACTED)\n    .replace(HEX32, REDACTED)\n    .replace(MASKED_ID, REDACTED)\n    .replace(VIN_LIKE, REDACTED)\n    .replace(COORD_PAIR, REDACTED)\n    .replace(COORD_ONE, REDACTED);\n}"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "The input must come from the GWM cloud itself or a party trusted by the TLS-verified client for the GWM host (or an owner-chosen fixture host). A network attacker without a trusted certificate cannot inject it."
+      },
+      "impact": {
+        "score": "low",
+        "reason": "One response stalls the single-owner reader and burns its 0.5 CPU share for hours, and the LWT makes every HA entity unavailable until the owner restarts the container. No data, credential or vehicle control is exposed, and the GWM cloud could already withhold or falsify status data."
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Independently reproduced on the uncapped getLastStatus path through the real GwmClient, Reader, logger and createPublisher, with a real Mosquitto broker showing the keepalive drop and LWT. Only the duration at the 4 MiB cap and the 60 s deployment keepalive timing are derived."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "mosquitto/mosquitto.conf:clientid-takeover-will:haval-h6-mqtt/mqtt.js:createPublisher",
+    "title": "A read-only MQTT user can take over the reader's fixed client id and make the broker write a retained offline availability to gwmbrasil/#, bypassing the topic ACL",
+    "description": "The reader connects to Mosquitto with the deterministic client id gwm-reader-<VEHICLE_ID> (gwm-reader-h6 by default), MQTT v5 clean start, and a QoS 1 retained will of offline on gwmbrasil/<id>/availability (haval-h6-mqtt/mqtt.js:116-123). mosquitto/mosquitto.conf has no use_username_as_clientid, so the broker does not bind a client id to a username; the acl governs topic access only. An authenticated read-only user (homeassistant or kinestra_bridge), which has no write rule on gwmbrasil/#, cannot publish to gwmbrasil/<id>/availability directly, but it can open a CONNECT presenting the reader's client id. Mosquitto 2.1.2 then performs MQTT session takeover: it disconnects the reader with reason session taken over and, because the reader's will has no will-delay, publishes the reader's retained offline will under the reader's (gwm_reader) authority. This is a write to a retained topic outside the read-only user's ACL. The effect persists: the reader's mqtt client reconnects after 5 s but never republishes online (Reader.start() at haval-h6-mqtt/reader.js:83 is the only availability online publish, and createPublisher registers no connect handler, haval-h6-mqtt/mqtt.js:124-125), so the retained offline remains and Home Assistant marks every gwmbrasil entity unavailable while state topics keep updating, until the reader process restarts. A read-only peer can also repeat the takeover to keep disconnecting the reader's broker session.",
+    "root_cause": "Broker authority over a client id is not tied to the authenticated user (mosquitto/mosquitto.conf has no use_username_as_clientid or equivalent), so any authenticated user can present the reader's deterministic client id. Combined with the reader's predictable client id plus a retained will (haval-h6-mqtt/mqtt.js:116-123) and the absence of any online re-publish on reconnect (haval-h6-mqtt/reader.js:83; no connect handler at haval-h6-mqtt/mqtt.js:124-125), a takeover by a read-only user writes and leaves a retained offline on a topic that user's ACL forbids.",
+    "intended_behavior": "The topic ACL (mosquitto/acl) grants homeassistant and kinestra_bridge read-only access; neither should be able to cause any write to gwmbrasil/#. The gwmbrasil/<id>/availability signal should reflect only the reader's real connection state, and the reader should re-assert online whenever its broker connection is re-established.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "mosquitto/acl",
+        "line": 13,
+        "scope": "user kinestra_bridge (and homeassistant at mosquitto/acl:8)",
+        "description": "kinestra_bridge (acl:13-14) and homeassistant (acl:8-10) are authenticated read-only users with no write rule on gwmbrasil/#, yet each may send a CONNECT presenting any client id. Reproduced: a direct publish to gwmbrasil/h6/availability by each user is refused Not authorized (artifacts/check-1.txt)."
+      },
+      {
+        "kind": "propagation",
+        "file": "mosquitto/mosquitto.conf",
+        "line": 8,
+        "scope": "acl_file / listener settings",
+        "description": "allow_anonymous false, password_file and acl_file are set (lines 6-8), but no setting binds the client id to the username, so a CONNECT presenting gwm-reader-h6 from another user is accepted by the broker (observed: broker logs New client connected as gwm-reader-h6 u'homeassistant' / u'kinestra_bridge', artifacts/check-2.txt)."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 117,
+        "scope": "createPublisher",
+        "description": "The reader's client id is the predictable gwm-reader-${vehicleId} with clean: true and protocolVersion 5 (lines 116-120), and a QoS 1 retained offline will on gwmbrasil/<id>/availability (line 122)."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 124,
+        "scope": "createPublisher event handlers",
+        "description": "Only error and reconnect handlers are registered (lines 124-125); nothing re-publishes availability when the connection is re-established after a takeover."
+      },
+      {
+        "kind": "sink",
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 83,
+        "scope": "Reader.start",
+        "description": "online is published retained exactly once at start; after a takeover fires the reader's will, gwmbrasil/<id>/availability stays offline (retained) until the process restarts. Reproduced: retained value read offline while the read-only user held the client id and after it disconnected (artifacts/check-1.txt)."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "mosquitto/mosquitto.conf",
+        "line": 6,
+        "description": "allow_anonymous false, password_file (line 7) and acl_file (line 8) are the only access controls; there is no use_username_as_clientid line anywhere in the file (lines 1-18), so client-id ownership is not tied to the authenticated username."
+      },
+      {
+        "file": "mosquitto/acl",
+        "line": 4,
+        "description": "Only gwm_reader may write gwmbrasil/# (acl:3-5); homeassistant (acl:8-10) and kinestra_bridge (acl:13-14) are read-only, so a retained write to gwmbrasil/h6/availability by either is outside their authority. Confirmed at runtime: direct publish returns Not authorized (artifacts/check-1.txt)."
+      },
+      {
+        "file": "haval-h6-mqtt/mqtt.js",
+        "line": 122,
+        "description": "will: { topic: t.availability, payload: Buffer.from(\"offline\"), qos: 1, retain: true } on a connection with clientId gwm-reader-${vehicleId} (line 117), clean true, protocolVersion 5 \u2014 no will-delay, so the will fires immediately on an abnormal close such as session takeover."
+      },
+      {
+        "file": "haval-h6-mqtt/reader.js",
+        "line": 83,
+        "description": "The single retained online publish is in Reader.start(); there is no republish on reconnect, so after a takeover-triggered offline the retained value is not restored until the process restarts."
+      },
+      {
+        "file": "README.md",
+        "line": 147,
+        "description": "The owner attaches Home Assistant to gwm-reader_mqtt_internal as homeassistant (README.md:140-148) and kinestra_bridge reads gwmbrasil/+/snapshot through a Mosquitto bridge to this broker (README.md:161-168), so both read-only principals are authenticated peers of mosquitto:1883."
+      },
+      {
+        "file": "mosquitto/mosquitto.conf",
+        "line": 4,
+        "description": "Local reproduction with the pinned eclipse-mosquitto:2.1.2-alpine image, the repository mosquitto.conf (only file paths rewritten to tmpfs/read-only mounts) and the repository acl verbatim, plus the real createPublisher() as the reader: homeassistant and kinestra_bridge each connected with clientId gwm-reader-h6 (connack 0), the broker logged session taken over for the reader, and the retained gwmbrasil/h6/availability read back as offline and stayed offline after the attacker disconnected; it returned to online only after an explicit reader re-publish, which the production code does not perform on reconnect (artifacts/check-1.txt, artifacts/check-2.txt)."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "authentication_level",
+        "description": "The actor is an authenticated MQTT user of the broker (holds the homeassistant or kinestra_bridge password, or has compromised Home Assistant or the kinestra bridge, both authenticated peers of mosquitto:1883)."
+      },
+      {
+        "kind": "authorization_role",
+        "description": "The actor's ACL role is read-only on gwmbrasil/# (no write rule), so the resulting retained write is outside its granted authority."
+      },
+      {
+        "kind": "system_configuration",
+        "description": "mosquitto/mosquitto.conf does not set use_username_as_clientid (or any client-id-to-username binding), so the broker accepts another user's CONNECT bearing the reader's client id."
+      },
+      {
+        "kind": "third_party_dependency",
+        "description": "Mosquitto 2.1.2 performs MQTT v5 session takeover on a duplicate client id and publishes the taken-over session's retained will (no will-delay), observed directly with the pinned broker image."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "An authenticated read-only MQTT peer (homeassistant or kinestra_bridge) that has no write permission on gwmbrasil/# and wants to write a retained value there and/or disrupt the reader.",
+      "payloads": [
+        "clientId=gwm-reader-h6 (the reader's deterministic id: gwm-reader-<VEHICLE_ID>)",
+        "CONNECT username=homeassistant, cleanStart=true, protocolVersion=5, no will",
+        "CONNECT username=kinestra_bridge, cleanStart=true, protocolVersion=5, no will"
+      ],
+      "instructions": [
+        "Start the pinned eclipse-mosquitto:2.1.2-alpine broker with the repository mosquitto.conf (only password_file/acl_file/persistence paths rewritten to tmpfs/read-only mounts) and the repository acl verbatim, in an isolated network namespace.",
+        "Connect the real reader via createPublisher() as gwm_reader with vehicleId h6 and publish online retained to gwmbrasil/h6/availability.",
+        "As homeassistant, attempt a direct retained publish of offline to gwmbrasil/h6/availability and observe it is refused Not authorized.",
+        "As homeassistant, open a CONNECT with clientId gwm-reader-h6 and clean start (no will); wait briefly, then read the retained gwmbrasil/h6/availability as homeassistant.",
+        "Disconnect the attacker and read the retained value again; repeat the sequence as kinestra_bridge."
+      ],
+      "observed_result": "The direct retained publish was refused (Not authorized), confirming the topic ACL. The CONNECT bearing clientId gwm-reader-h6 was accepted (connack 0) for both homeassistant and kinestra_bridge; the broker logged 'Client gwm-reader-h6 ... disconnected: session taken over' and a new client 'gwm-reader-h6 ... u'homeassistant''/'u'kinestra_bridge''. The retained gwmbrasil/h6/availability read back as 'offline' while the read-only user held the id and remained 'offline' after it disconnected; it returned to 'online' only after an explicit reader re-publish (which the production reader does not perform on reconnect). Evidence: agents/v3-mosquitto/artifacts/check-1.txt (probe), agents/v3-mosquitto/artifacts/check-2.txt (broker log)."
+    },
+    "remediation": {
+      "strategy": "Bind client-id ownership to the authenticated user at the broker and make the reader self-heal its availability. In mosquitto/mosquitto.conf set use_username_as_clientid true so the broker forces each connection's effective client id to its username; a read-only user can then never present gwm-reader-<VEHICLE_ID>, so it cannot take over the reader's session or trigger its will. Independently, defend in depth in the reader: register a client.on('connect') handler that re-publishes availability online retained on every (re)connection, so a transient drop or takeover does not leave a stale retained offline. Keeping both closes the ACL bypass and the persistence of a false unavailable state.",
+      "code_changes": [
+        {
+          "file_name": "mosquitto/mosquitto.conf",
+          "fixed_code": "listener 1883\nprotocol mqtt\nallow_anonymous false\nuse_username_as_clientid true\npassword_file /mosquitto/secrets/passwd\nacl_file /mosquitto/config/acl"
+        },
+        {
+          "file_name": "haval-h6-mqtt/mqtt.js",
+          "fixed_code": "  client.on(\"error\", (err) => log?.warn(\"mqtt error\", { error_class: \"mqtt\", message: err?.message }));\n  client.on(\"reconnect\", () => log?.debug(\"mqtt reconnecting\"));\n  // Re-assert availability on every (re)connection so a drop or session\n  // takeover does not leave a stale retained offline.\n  client.on(\"connect\", () => {\n    client.publish(t.availability, \"online\", { qos: 1, retain: true });\n  });"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "medium",
+        "reason": "No write permission is needed: any party holding the homeassistant or kinestra_bridge password, or who compromises Home Assistant (a large third-party app) or the kinestra bridge, can run a one-line CONNECT with a known, deterministic client id. The exact client id is derivable from VEHICLE_ID (gwm-reader-h6 by default). It does require an authenticated foothold on the internal broker, which bounds the likelihood below high."
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "A read-only user bypasses the topic ACL to write a retained value to gwmbrasil/#, driving a persistent false offline that makes Home Assistant mark every gwmbrasil entity unavailable while state topics keep updating; the stale retained value survives until the reader process restarts. The same move repeatedly disconnects the reader's broker session (availability/monitoring denial of service). It does not disclose secrets, does not forge vehicle state values, and grants no vehicle control, bounding impact below high."
+      },
+      "overall_severity": "medium"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Reproduced locally with the pinned eclipse-mosquitto:2.1.2-alpine broker, the repository mosquitto.conf (only file paths rewritten) and acl verbatim, and the real createPublisher() reader code. The ACL correctly refused a direct write, yet the client-id takeover by both read-only users was accepted, triggered the reader's will, and left gwmbrasil/h6/availability retained offline; source confirms the reader never republishes online on reconnect. Evidence captured in agents/v3-mosquitto/artifacts/check-1.txt and check-2.txt."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "proxy/squid.conf:acl-allowlist-dstdomain-rdns-ip-literal-connect",
+    "title": "Squid dstdomain allowlist without -n accepts CONNECT to an IP literal whose reverse DNS name matches an allowlisted host",
+    "description": "The egress proxy is meant to open CONNECT tunnels only to the reviewed GWM host names on port 443. proxy/squid.conf:11 declares 'acl allowlist dstdomain \"/etc/squid/allowlist.txt\"' without -n, and proxy/squid.conf:17 allows 'CONNECT allowlist'. When the CONNECT host is an IP literal that does not match an entry, Squid does a reverse DNS (PTR) lookup and matches the returned name against the allowlist, with no forward confirmation. A client on mqtt_internal (any RFC1918 source passes proxy/squid.conf:14) can send 'CONNECT <ip>:443'; if the PTR record of that IP (controlled by the owner of the IP's reverse zone) equals an allowlisted name, Squid tunnels to that arbitrary IP. In the isolated local reproduction with the repository squid.conf included unmodified in the pinned ubuntu/squid image (binary reports Squid 6.14), an allowlist of only 'gwm.test', and a fake resolver answering PTR 5.0.0.127.in-addr.arpa -> gwm.test, 'CONNECT 127.0.0.5:443' was logged TCP_TUNNEL/200 and the dummy listener's bytes came back through the tunnel, while an IP whose PTR is evil.test got TCP_DENIED/403. With '-n' or an IP-literal deny rule the same request got 403 and the host-name CONNECT still worked. This lets code already running in the reader (a compromised dependency) or another container attached to mqtt_internal exfiltrate tokens, VIN and coordinates to an attacker-chosen internet IP around the 'only the GWM hosts' egress boundary.",
+    "root_cause": "The allowlist ACL uses dstdomain without -n (proxy/squid.conf:11) and http_access has no rule that denies IP-literal CONNECT targets (proxy/squid.conf:14-18), so Squid's reverse-DNS fallback lets whoever controls an IP's PTR record make that IP match an allowlisted host name.",
+    "intended_behavior": "Squid opens a CONNECT tunnel only when the literal requested host name equals a reviewed allowlist entry and the port is 443; a CONNECT to any IP literal, or to a name not on the allowlist, is denied with 403 regardless of its reverse DNS.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "proxy/squid.conf",
+        "line": 14,
+        "scope": "http_access deny !localnet",
+        "description": "Any RFC1918 client (localnet at proxy/squid.conf:8) passes the only source check, including the reader and every container attached to mqtt_internal; there is no proxy authentication."
+      },
+      {
+        "kind": "propagation",
+        "file": "docker-compose.yml",
+        "line": 69,
+        "scope": "services.squid.networks",
+        "description": "Squid is on mqtt_internal and the routable egress network (docker-compose.yml:110-113), so it is the only exit for internal containers, and it mounts proxy/squid.conf unmodified (docker-compose.yml:67)."
+      },
+      {
+        "kind": "propagation",
+        "file": "proxy/squid.conf",
+        "line": 11,
+        "scope": "acl allowlist dstdomain",
+        "description": "dstdomain without -n: for an IP-literal CONNECT host that does not match, Squid issues a PTR query and matches the returned name against the allowlist (observed: two PTR queries for 5.0.0.127.in-addr.arpa in agents/v4-proxy/artifacts/check-1.txt)."
+      },
+      {
+        "kind": "sink",
+        "file": "proxy/squid.conf",
+        "line": 17,
+        "scope": "http_access allow CONNECT allowlist",
+        "description": "The PTR-derived match allows the request and Squid opens a tunnel to the IP literal (observed TCP_TUNNEL/200 CONNECT 127.0.0.5:443 with the dummy listener's bytes returned)."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "proxy/squid.conf",
+        "line": 11,
+        "description": "acl allowlist dstdomain \"/etc/squid/allowlist.txt\" has no -n flag."
+      },
+      {
+        "file": "proxy/squid.conf",
+        "line": 16,
+        "description": "The only other destination restriction is port 443; no rule denies IP-literal or private destinations before the allow at line 17."
+      },
+      {
+        "file": "proxy/squid.conf",
+        "line": 8,
+        "description": "localnet is all RFC1918, so every container on the Docker networks is an allowed client."
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 67,
+        "description": "The deployed squid service mounts the repository proxy/squid.conf read-only, so this ACL is the active egress policy."
+      },
+      {
+        "file": "README.md",
+        "line": 147,
+        "description": "The owner is told to attach Home Assistant to gwm-reader_mqtt_internal, which gives it a route to squid:3128."
+      },
+      {
+        "file": "test/integration/netprobe.js",
+        "line": 33,
+        "description": "The egress probe tests CONNECT only with host names (example.com, mock-gwm), never with an IP literal, so the gap is untested."
+      },
+      {
+        "file": "agents/v4-proxy/artifacts/check-1.txt",
+        "line": 35,
+        "description": "Repository squid.conf (included unmodified), allowlist 'gwm.test', fake PTR 127.0.0.5 -> gwm.test: 'TCP_TUNNEL/200 CONNECT 127.0.0.5:443'; line 3 shows the tunnel returned 'DUMMY-443-LISTENER'; line 36 shows 127.0.0.6 (PTR evil.test) denied 403; line 61 shows the PTR query."
+      },
+      {
+        "file": "agents/v4-proxy/artifacts/check-2.txt",
+        "line": 35,
+        "description": "Same harness with 'dstdomain -n': 'TCP_DENIED/403 CONNECT 127.0.0.5:443', no PTR query issued, and 'CONNECT gwm.test:443' still TCP_TUNNEL/200 (line 37)."
+      },
+      {
+        "file": "agents/v4-proxy/artifacts/check-3.txt",
+        "line": 35,
+        "description": "Same harness with an added 'acl ip_literal dstdom_regex -n ^[0-9.]+$ ^\\[' and 'http_access deny ip_literal' before the repository rules: 'TCP_DENIED/403 CONNECT 127.0.0.5:443', host-name CONNECT still 200 (line 37)."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "The attacker needs code running on a container attached to mqtt_internal (for example a compromised dependency in the reader, which has no other route out, or another attached container) to reach squid:3128."
+      },
+      {
+        "kind": "third_party_dependency",
+        "description": "The attacker needs an internet IP reachable on 443 whose reverse DNS (PTR) record they control and set to an allowlisted name; Squid does no forward-confirmation of the PTR name."
+      },
+      {
+        "kind": "system_configuration",
+        "description": "The deployed allowlist (gitignored proxy/allowlist.local.txt) holds host names, and the deployed squid resolves PTR queries through the Docker embedded DNS and host resolvers on the egress network. The local run used a fake resolver via a harness-only dns_nameservers line."
+      },
+      {
+        "kind": "authentication_level",
+        "description": "No proxy authentication is configured; source address in RFC1918 is the only client check."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "Code running in a container on mqtt_internal (RFC1918 source) that wants to reach an arbitrary internet IP on port 443 through the allowlisting Squid proxy.",
+      "payloads": [
+        "CONNECT 127.0.0.5:443 HTTP/1.1\\r\\nHost: 127.0.0.5:443\\r\\n\\r\\n (with PTR 5.0.0.127.in-addr.arpa -> gwm.test, allowlist = gwm.test)",
+        "CONNECT 127.0.0.6:443 HTTP/1.1 (negative control, PTR -> evil.test)"
+      ],
+      "instructions": [
+        "Start a node:24.22.0-alpine container with --network none, --read-only, --cap-drop ALL, no-new-privileges, 256m memory, 0.5 CPU, 64 pids, that runs a fake DNS on 127.0.0.1:53 (A gwm.test -> 127.0.0.5; PTR 127.0.0.5 -> gwm.test, PTR 127.0.0.6 -> evil.test) and a dummy TCP listener on :443 that writes DUMMY-443-LISTENER.",
+        "Start the pinned ubuntu/squid:6.6-24.04_edge@sha256:8a3baed4... image in the same network namespace (--network container:<first>), same limits, user 13:13, tmpfs for /tmp, /var/spool/squid, /run, with proxy/squid.conf mounted read-only at /etc/squid/squid.conf and an allowlist containing only 'gwm.test' at /etc/squid/allowlist.txt.",
+        "Run squid -N -f with a harness wrapper that adds 'acl localnet src 127.0.0.2/32' (the network-none namespace has no RFC1918 address; Squid ACL values accumulate), then 'include /etc/squid/squid.conf' (unmodified), 'dns_nameservers 127.0.0.1', 'visible_hostname squid-harness.test' and 'shutdown_lifetime 1 seconds'.",
+        "From a third node container in the same namespace, bound to source 127.0.0.2, send CONNECT 127.0.0.5:443, 127.0.0.6:443, gwm.test:443 and 127.0.0.5:80 to 127.0.0.1:3128 and record status codes and tunnel bytes; stop squid gracefully to flush the access log; remove all containers.",
+        "Repeat with 'dstdomain -n' and with an IP-literal deny rule as fix controls."
+      ],
+      "observed_result": "Image ubuntu/squid:6.6-24.04_edge pinned by digest sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c; the binary reports Squid 6.14. With the repository squid.conf: CONNECT 127.0.0.5:443 -> TCP_TUNNEL/200 and the tunnel returned 'DUMMY-443-LISTENER' after Squid sent a PTR query for 5.0.0.127.in-addr.arpa; CONNECT 127.0.0.6:443 (PTR evil.test) -> 403; CONNECT gwm.test:443 -> 200; CONNECT 127.0.0.5:80 -> 403. With -n or the IP-literal deny rule, CONNECT 127.0.0.5:443 -> 403 and gwm.test:443 -> 200. The destination was a loopback stand-in for an internet IP; no external network was used."
+    },
+    "remediation": {
+      "strategy": "Match the allowlist only on the literal CONNECT host name: add -n to the dstdomain ACL (the tested fix, check-2). As defense in depth, deny IP-literal CONNECT targets before the allow rule (the IPv4 branch was tested in check-3; the bracketed IPv6 branch was not exercised). Add an IP-literal CONNECT case to test/integration/netprobe.js that must return 403.",
+      "code_changes": [
+        {
+          "file_name": "proxy/squid.conf",
+          "fixed_code": "# Egress proxy for gwm-reader. gwm-reader has no direct route to the\n# internet (it is only on the internal network); HTTPS leaves only through\n# CONNECT tunnels to the domains in allowlist.txt. No caching, no TLS\n# interception: Squid sees only host:port, never paths or bodies.\n\nhttp_port 3128\n\nacl localnet src 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16\nacl SSL_ports port 443\nacl CONNECT method CONNECT\n# -n: match only the literal CONNECT host name; never fall back to the reverse DNS name of an IP literal.\nacl allowlist dstdomain -n \"/etc/squid/allowlist.txt\"\nacl ip_literal dstdom_regex -n ^[0-9.]+$ ^\\[\nacl healthcheck src 127.0.0.1/32\n\nhttp_access deny !localnet\nhttp_access deny !CONNECT\nhttp_access deny !SSL_ports\nhttp_access deny ip_literal\nhttp_access allow CONNECT allowlist\nhttp_access deny all\n\ncache deny all\nvia off\nforwarded_for delete\nhttpd_suppress_version_string on\n\n# One line per request on stdout: time client result/status method host:port\nlogformat gwmreader %{%Y-%m-%dT%H:%M:%S}tg %>a %Ss/%03>Hs %rm %ru\naccess_log stdio:/dev/stdout gwmreader !healthcheck\ncache_log stdio:/dev/stderr\npid_filename none\ncoredump_dir /tmp\n# No ICMP (the container has no capabilities).\npinger_enable off\n"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "Exploitation requires a compromise of a reader dependency or of a container attached to mqtt_internal, which this egress control is the last line against, plus control of an internet IP's PTR record, which many hosting providers allow. No other barrier exists once those hold."
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "It defeats the egress allowlist, the control meant to stop a compromised reader from sending tokens, the device id, the VIN and coordinates anywhere but GWM; it gives an arbitrary port-443 TCP tunnel to an attacker IP. It gives no access by itself, and the attacker must already run code inside the stack."
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "The behavior was reproduced with the pinned Squid image and the repository squid.conf included unmodified, with positive, negative and two fix controls. The harness only added a loopback client to localnet, a local resolver, and log settings; the deployed allowlist contents and PTR resolution through Docker DNS are not observed but any host-name allowlist is affected."
+    }
+  },
+  {
+    "verdict": "needs_validation",
+    "fingerprint": "upstream-sync/.github/workflows:fork-token-publish-authority",
+    "title": "Upstream-authored workflows reach the fork's branches through the documented sync and would run with the fork's GITHUB_TOKEN write and OIDC authority",
+    "description": "README.md:167 makes the fork's main a mirror of upstream/main, and README.md:170-171 tells the owner to merge upstream/main into hardened. Both handoffs carry upstream-authored .github/workflows files, which the fork does not treat as reviewed authorization code. Vector 1 (hardened, the stronger one): a new upstream workflow file merges into hardened with exit 0 and no conflict (independent fixture agents/v5-upstreamsync/artifacts/check-1.txt, matching agents/h8-upstream/artifacts/check-1.txt). The README merge checklist (README.md:174-184) does not name .github/, the post-merge checks (README.md:189-190) inspect no workflow, and readonly.test.js:12 scans only top-level haval-h6-mqtt/*.js. After the owner pushes the merge, a push trigger in that file would run it next to ci.yml. The three owner steps (README.md:196-198) do not bound it: step 2 disables one file by name, step 1 restricts only uses: actions and not run: steps, and step 3 sets only the default token, which an explicit permissions: key can raise for push events (GitHub documented behavior, a host fact). Only an edit to the known docker-build-publish.yml surfaces as a modify/delete conflict. Vector 2 (main): main holds upstream's docker-build-publish.yml today (main == upstream/main == bafa10e). On a push to main or a v*.*.* tag, including a 'Sync fork', it would log in to ghcr.io with secrets.GITHUB_TOKEN, push upstream's unhardened tree as ghcr.io/<fork>:latest plus a date tag, and cosign-sign the digest with the fork's workflow identity. Calibration: the image content equals the upstream baseline, and the owner's own deployment builds locally (docker-compose.yml:25-26, build: . / image: gwm-reader:local), so the owner does not consume that image; the harm is an unauthorized, fork-signed publication that third parties could take as the hardened fork, and write-scoped execution of unreviewed upstream code. README.md:31 and docs/AUDIT.md:216 describe hardened and are accurate for it; README.md:193-198 acknowledge the workflow on main, and the gap is that those steps cover only that one known file. Nothing is exploitable today: the parent reports that GitHub Actions are disabled for the whole fork and that the owner has not pushed to main or used 'Sync fork'.",
+    "claimed_root_cause": "The fork treats .github/workflows as upstream-mirrored content instead of fork-owned authorization code. The default branch keeps upstream's publish workflow, the documented upstream merge has no rule or test for .github/, and the compensating controls are GitHub settings (one per-file disable, an action allowlist, a default-token default) that do not stop a new upstream workflow file that declares its own write permissions and uses run: steps.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "README.md",
+        "line": 167,
+        "scope": "Update from upstream",
+        "description": "main mirrors upstream/main, so upstream maintainers author every file on the fork's default branch, including .github/workflows. The fork treats them as lower trust: README.md:179-181 says upstream changes may bring back commands, the PIN, subscriptions or TLS weakening and must not be taken as they are."
+      },
+      {
+        "kind": "propagation",
+        "file": "README.md",
+        "line": 171,
+        "scope": "Update from upstream",
+        "description": "git switch hardened && git merge upstream/main; a newly added upstream workflow merges cleanly (agents/v5-upstreamsync/artifacts/check-1.txt: merge exit 0, 0 unmerged paths, .github/workflows/x.yml present next to ci.yml)."
+      },
+      {
+        "kind": "propagation",
+        "file": "README.md",
+        "line": 174,
+        "scope": "merge checklist",
+        "description": "The areas to review after a merge (README.md:174-184) are packaging, carConnector.js/mqtt.js/index.js and new endpoints; .github/ is not named."
+      },
+      {
+        "kind": "propagation",
+        "file": "haval-h6-mqtt/test/unit/readonly.test.js",
+        "line": 12,
+        "scope": "sources",
+        "description": "The read-only source scan reads only top-level haval-h6-mqtt/*.js, so no test sees an imported workflow file."
+      },
+      {
+        "kind": "propagation",
+        "file": ".github/workflows/ci.yml",
+        "line": 12,
+        "scope": "permissions",
+        "description": "contents: read narrows only ci.yml; workflow permissions are per file and do not constrain another workflow file merged next to it."
+      },
+      {
+        "kind": "propagation",
+        "file": ".github/workflows/docker-build-publish.yml",
+        "line": 9,
+        "scope": "on.push (branch main, git show main:)",
+        "description": "On main the upstream workflow triggers on every push to main (line 10) and on v*.*.* tags (line 12)."
+      },
+      {
+        "kind": "propagation",
+        "file": ".github/workflows/docker-build-publish.yml",
+        "line": 29,
+        "scope": "jobs.build.permissions (branch main)",
+        "description": "The job explicitly requests packages: write (line 29) and id-token: write (line 32)."
+      },
+      {
+        "kind": "propagation",
+        "file": ".github/workflows/docker-build-publish.yml",
+        "line": 61,
+        "scope": "Log into registry (branch main)",
+        "description": "docker/login-action logs in to ghcr.io with secrets.GITHUB_TOKEN (line 65) on non-PR events (line 60)."
+      },
+      {
+        "kind": "sink",
+        "file": ".github/workflows/docker-build-publish.yml",
+        "line": 82,
+        "scope": "Build and push / Sign (branch main)",
+        "description": "build-push-action pushes the main tree (context ., line 81) as ghcr.io/${{ github.repository }}:latest and a date tag (line 83); cosign signs the digest with the fork's workflow identity (lines 93-101)."
+      }
+    ],
+    "evidence": [
+      {
+        "file": ".github/workflows/docker-build-publish.yml",
+        "line": 32,
+        "description": "On main (git show main:): id-token: write next to packages: write at line 29; checkout uses the mutable tag actions/checkout@v4 at line 41. git ls-tree shows this is the only workflow on main, and git rev-parse main == bafa10e (upstream 'Release 1.0.8')."
+      },
+      {
+        "file": "README.md",
+        "line": 193,
+        "description": "The README states that main still holds docker-build-publish.yml and publishes on every push to main; README.md:196-198 list the three owner steps (allow SHA-pinned actions, disable that one workflow by name, default token read-only)."
+      },
+      {
+        "file": "README.md",
+        "line": 189,
+        "description": "The post-merge checks (npm ci, lint, npm test, npm audit, test:integration; lines 189-190) inspect no workflow file."
+      },
+      {
+        "file": "docs/AUDIT.md",
+        "line": 216,
+        "description": "States the auto-publish workflow is deleted on hardened and 'disabled by ID on GitHub before Actions are enabled'; true for hardened, and the main-branch control it names is a GitHub setting, not source."
+      },
+      {
+        "file": "haval-h6-mqtt/test/unit/readonly.test.js",
+        "line": 12,
+        "description": "readdirSync of the haval-h6-mqtt top level, filtered to .js minus eslint.config.js; .github is outside the scan."
+      },
+      {
+        "file": ".github/workflows/ci.yml",
+        "line": 8,
+        "description": "ci.yml runs on push to hardened, so the push that lands a merged upstream workflow with a hardened push trigger runs both."
+      },
+      {
+        "file": "docker-compose.yml",
+        "line": 25,
+        "description": "build: . with image: gwm-reader:local (line 26): the owner's deployment builds locally and does not pull ghcr.io/<fork>, so the main-branch publish has no consumer in the owner's own deployment."
+      }
+    ],
+    "blockers": [
+      "Parent deployment fact: GitHub Actions are disabled for the whole fork (enabled:false, set 2026-10-21), and the owner has not pushed to main or used 'Sync fork'; no workflow runs until the owner enables Actions.",
+      "Not source-visible whether the owner has disabled docker-build-publish.yml by ID, set an allowed-actions policy, or set the default workflow token to read-only.",
+      "GitHub host semantics, not observable offline: that an explicit permissions: key raises GITHUB_TOKEN scopes above a read-only repository default for push events, that the allowed-actions policy does not govern run: steps, and that a 'Sync fork' update emits a push event that triggers workflows on main.",
+      "Branch protection or rulesets on main and hardened (required reviews, restricted pushers) are not visible; they decide what an imported workflow with contents: write could change.",
+      "Whether ghcr.io/kaiohenricunha/gwm-reader exists, is public, or is pulled by anyone is not visible; the owner's compose deployment builds locally (docker-compose.yml:25-26)."
+    ],
+    "validation_plan": {
+      "local": "Done offline (agents/v5-upstreamsync/artifacts/check-1.txt): a scratch clone of the target with host git (hooks off, GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_NOSYSTEM=1, no network, no target code run); a dummy commit on top of main adds .github/workflows/x.yml (push to hardened, permissions contents: write, one run: echo DUMMY_MARKER step); git merge into hardened gives exit 0, 0 unmerged paths, and x.yml beside ci.yml. Regression test to add on hardened: a unit test that asserts the set of files under .github/workflows equals ['ci.yml'] and that every workflow sets top-level permissions to read-only, so the README post-merge 'npm test' fails on an imported workflow.",
+      "deployment": "Owner-observed and read-only, with Actions still disabled: in the fork's Settings > Actions record the enabled state, the allowed-actions policy and the default workflow permissions; in the Actions tab record whether docker-build-publish.yml is disabled; record branch protection or rulesets for main and hardened; record whether a ghcr.io package exists under the fork and its visibility. Do not push to main, use 'Sync fork', or enable Actions to test this. Fix to evaluate: delete docker-build-publish.yml on main or make hardened the default branch and stop mirroring main; add .github/ and the Dockerfile to the README merge checklist; add the workflow-set test above."
+    }
+  }
+]

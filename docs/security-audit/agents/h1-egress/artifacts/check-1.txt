@@ -1,0 +1,13 @@
+(node:1) [DEP0123] DeprecationWarning: Setting the TLS ServerName to an IP address is not permitted by RFC 6066. This will be ignored in a future version.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{"label":"1 good cert, extra CA1, via tunnel","result":"ACCEPTED","status":200,"body":"{\"ok\":true,\"clientCN\":null}"}
+{"label":"2 trusted CA but SAN other.test for host gwm.test, via tunnel","result":"REJECTED","errorClass":"tls","message":"testroute: ERR_TLS_CERT_ALTNAME_INVALID"}
+{"label":"3 cert from CA2 (not trusted), via tunnel","result":"REJECTED","errorClass":"tls","message":"testroute: UNABLE_TO_VERIFY_LEAF_SIGNATURE"}
+{"label":"4 good cert, no extra CA (system roots only), via tunnel","result":"REJECTED","errorClass":"tls","message":"testroute: UNABLE_TO_VERIFY_LEAF_SIGNATURE"}
+{"label":"5 trusted cert with EKU clientAuth only, via tunnel","result":"REJECTED","errorClass":"network","message":"testroute: INVALID_PURPOSE"}
+{"label":"6 IP-literal URL to server whose cert names gwm.test, via tunnel","result":"REJECTED","errorClass":"tls","message":"testroute: ERR_TLS_CERT_ALTNAME_INVALID"}
+{"label":"7 proxy refuses CONNECT","result":"REJECTED","errorClass":"proxy","message":"proxy refused CONNECT to denied.test (HTTP 403)"}
+{"label":"8 mTLS client cert through tunnel","result":"ACCEPTED","status":200,"body":"{\"ok\":true,\"clientCN\":\"client\"}"}
+{"label":"9 server capped at TLSv1.1, via tunnel","result":"REJECTED","errorClass":"tls","message":"testroute: ERR_SSL_TLSV1_ALERT_PROTOCOL_VERSION"}
+{"label":"10 caller-supplied Host header other.test, wrongname server reached at gwm.test","result":"ACCEPTED","status":200,"body":"{\"ok\":true,\"clientCN\":null}"}
+{"sni_seen_by_servers":{"good":"gwm.test","wrongname":"other.test"},"connect_targets":["gwm.test:<port>","gwm.test:<port>","gwm.test:<port>","gwm.test:<port>","gwm.test:<port>","127.0.0.1:<port>","denied.test:<port>","gwm.test:<port>","gwm.test:<port>","gwm.test:<port>"]}

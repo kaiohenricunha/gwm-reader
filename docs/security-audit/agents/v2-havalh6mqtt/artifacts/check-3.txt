@@ -1,0 +1,55 @@
+reader_start_epoch=1792678769
+--- reader (node, real createPublisher+Reader+GwmClient+logger; keepalive overridden to 5 s, deployment default 60 s)
+[1.2s] connected, online published; code_len=64000
+[1.3s] LOG {"time":"2026-10-22T14:19:33.131Z","level":"info","msg":"login succeeded","logins_total":1}
+[1.3s] LOG {"time":"2026-10-22T14:19:33.158Z","level":"info","msg":"vehicle selected","vehicles":1,"model":"H6 PHEV"}
+[29.5s] LOG {"time":"2026-10-22T14:19:33.364Z","level":"warn","msg":"poll failed","error_class":"api_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[34.5s] pollStatus returned after 33283 ms, next_delay_ms=53735
+[42.5s] max_event_loop_gap_ms=28009
+--- subscriber (mosquitto_sub, epoch seconds)
+[1792678773] SUB gwmbrasil/h6/availability online
+[1792678780] SUB gwmbrasil/h6/availability offline
+[1792678806] SUB gwmbrasil/h6/reader_error/state retrying
+[1792678806] SUB gwmbrasil/h6/reader_error/attributes {"error_class":"api_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[1792678814] SUB gwmbrasil/h6/availability offline
+--- broker (PUBLISH/PUBACK/discovery lines filtered)
+1792678766: Info: running mosquitto as user: mosquitto.
+1792678766: mosquitto version 2.1.2 starting
+1792678766: Using default config.
+1792678766: Bridge support available.
+1792678766: Persistence support available.
+1792678766: TLS support available.
+1792678766: TLS-PSK support available.
+1792678766: Websockets support available.
+1792678766: Starting in local only mode. Connections will only be possible from clients running on this machine.
+1792678766: Create a configuration file which defines a listener to allow remote access.
+1792678766: For more details see https://mosquitto.org/documentation/authentication-methods/
+1792678766: Opening ipv4 listen socket on port 1883.
+1792678766: Opening ipv6 listen socket on port 1883.
+1792678766: Opening http api listen socket on port 9883.
+1792678766: Using http_dir /usr/share/mosquitto/dashboard
+1792678766: mosquitto version 2.1.2 running
+1792678768: New connection from ::1:42972 on port 1883.
+1792678768: New client connected from ::1:42972 as auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44 (p4, c1, k60).
+1792678768: No will message specified.
+1792678768: Sending CONNACK to auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44 (0, 0)
+1792678768: Received SUBSCRIBE from auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44
+1792678768: 	gwmbrasil/h6/availability (QoS 0)
+1792678768: auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44 0 gwmbrasil/h6/availability
+1792678768: 	gwmbrasil/h6/reader_error/# (QoS 0)
+1792678768: auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44 0 gwmbrasil/h6/reader_error/#
+1792678768: Sending SUBACK to auto-E8FBDF4C-B3A4-944C-9143-7B3273045F44
+1792678772: New connection from 127.0.0.1:45120 on port 1883.
+1792678772: New client connected from 127.0.0.1:45120 as gwm-reader-h6 (p5, c1, k5).
+1792678772: Will message specified (7 bytes) (r1, q1).
+1792678772: 	gwmbrasil/h6/availability
+1792678772: Sending CONNACK to gwm-reader-h6 (0, 0)
+1792678780: Client gwm-reader-h6 [127.0.0.1:45120] disconnected: exceeded timeout.
+1792678806: New connection from 127.0.0.1:45860 on port 1883.
+1792678806: New client connected from 127.0.0.1:45860 as gwm-reader-h6 (p5, c1, k5).
+1792678806: Will message specified (7 bytes) (r1, q1).
+1792678806: 	gwmbrasil/h6/availability
+1792678806: Sending CONNACK to gwm-reader-h6 (0, 0)
+1792678811: Received PINGREQ from gwm-reader-h6
+1792678811: Sending PINGRESP to gwm-reader-h6
+1792678814: Client gwm-reader-h6 [127.0.0.1:45860] disconnected: connection closed by client.

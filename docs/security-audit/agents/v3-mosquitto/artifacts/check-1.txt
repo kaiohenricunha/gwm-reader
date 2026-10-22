@@ -1,0 +1,15 @@
+[+1.3s] reader connected as gwm_reader, published online retained
+[+2.5s] retained AV after reader online: "online"
+[+2.5s] homeassistant: direct publish to AV connack=0 result=Publish error: Not authorized
+[+3.7s] retained AV after homeassistant direct-write attempt: "online"
+[+3.7s] homeassistant: connect with reader clientId 'gwm-reader-h6' connack=0 ok=true
+[+5.7s] retained AV while homeassistant holds reader clientId: "offline"
+[+7.7s] retained AV after homeassistant disconnects: "offline"
+[+10.0s] retained AV after reader re-publishes online: "online"
+[+10.0s] kinestra_bridge: direct publish to AV connack=0 result=Publish error: Not authorized
+[+11.2s] retained AV after kinestra_bridge direct-write attempt: "online"
+[+11.2s] kinestra_bridge: connect with reader clientId 'gwm-reader-h6' connack=0 ok=true
+[+13.2s] retained AV while kinestra_bridge holds reader clientId: "offline"
+[+15.2s] retained AV after kinestra_bridge disconnects: "offline"
+[+17.4s] retained AV after reader re-publishes online: "online"
+[+17.4s] DONE

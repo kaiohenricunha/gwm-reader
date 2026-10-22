@@ -1,0 +1,5 @@
+clientId gwm-reader-h6 clean true will gwmbrasil/h6/availability offline retain true
+availability publishes after start: ["online"]
+availability publishes after reconnect: ["online"]
+listeners for connect: 0
+RESULT: no online republish after reconnect

@@ -1,0 +1,7 @@
+node v24.22.0
+getLastStatus code_len=4000 pollStatus_ms=189.4 interval_10ms_ticks_during_poll=0 next_delay_ms=52284 reader_error_retain=true error_class_len=4004
+getLastStatus code_len=8000 pollStatus_ms=380.7 interval_10ms_ticks_during_poll=0 next_delay_ms=103341 reader_error_retain=true error_class_len=8004
+getLastStatus code_len=16000 pollStatus_ms=1633.1 interval_10ms_ticks_during_poll=0 next_delay_ms=200052 reader_error_retain=true error_class_len=16004
+getLastStatus code_len=32000 pollStatus_ms=7099.6 interval_10ms_ticks_during_poll=0 next_delay_ms=551285 reader_error_retain=true error_class_len=32004
+getLastStatus code_len=64000 pollStatus_ms=26896.9 interval_10ms_ticks_during_poll=0 next_delay_ms=1016601 reader_error_retain=true error_class_len=64004
+http_calls ["loginAccount","acquireVehicles","getLastStatus"] logins 1 body_cap_bytes 4194304

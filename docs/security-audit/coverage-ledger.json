@@ -1,0 +1,2361 @@
+[
+  {
+    "coverage_id": ".github%2Fworkflows%2Fci.yml%23on::.github%2Fworkflows%2Fci.yml%23permissions::.github::SUPPLY-CHAIN-AND-RELEASE.md%23Untrusted%20code%20in%20a%20privileged%20workflow",
+    "canonical_refs": {
+      "surface": ".github/workflows/ci.yml#on",
+      "boundary": ".github/workflows/ci.yml#permissions",
+      "subsystem": ".github",
+      "attack_class": "SUPPLY-CHAIN-AND-RELEASE.md#Untrusted code in a privileged workflow"
+    },
+    "surface": "CI workflow and build inputs",
+    "boundary": "CI authority and artifact provenance",
+    "subsystem": "ci",
+    "attack_class": "Untrusted code in a privileged workflow",
+    "starting_paths": [
+      ".github/workflows/ci.yml",
+      ".github/dependabot.yml",
+      ".pre-commit-config.yaml",
+      "Dockerfile",
+      ".dockerignore",
+      "haval-h6-mqtt/package.json",
+      "haval-h6-mqtt/package-lock.json"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "SUPPLY-CHAIN-AND-RELEASE.md#Core discipline",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Untrusted code in a privileged workflow",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Mutable and unbound build inputs",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Build-context inclusion",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Universal moves",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h4-platform",
+    "reviewed_paths": [
+      ".dockerignore",
+      ".github/dependabot.yml",
+      ".github/workflows/ci.yml",
+      ".pre-commit-config.yaml",
+      "Dockerfile",
+      "haval-h6-mqtt/package-lock.json",
+      "haval-h6-mqtt/package.json",
+      "scripts/init-secrets.sh",
+      "test/integration/run.sh"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          ".github/workflows/ci.yml"
+        ],
+        "invariant": "Contributor-controlled code (fork PR, Dependabot PR) never runs with secrets, a write token, or publish authority.",
+        "method": "source",
+        "result": "Triggers are push to hardened, pull_request (not pull_request_target) and workflow_dispatch (ci.yml:6-10). Workflow-level permissions are contents: read (ci.yml:12-13) and no job widens them. No secrets.* reference, no environment, no registry login, no push: the image job builds with no push (ci.yml:64-65) and the only artifact is the SBOM upload (ci.yml:113-117). Every checkout sets persist-credentials: false (ci.yml:30-31,48-49,62-63,93-94,106-107). No ${{ github.event.* }} value is interpolated into a run step; only matrix.node goes into a with: input (ci.yml:34). Fork PR jobs therefore run contributor code only on an ephemeral runner with a read-only token and nothing to publish.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          ".github/workflows/ci.yml"
+        ],
+        "invariant": "Third-party actions and CI tool images are bound to immutable identities, and no PR-writable cache feeds a trusted job.",
+        "method": "source",
+        "result": "actions/checkout, actions/setup-node and actions/upload-artifact are pinned by 40-hex commit SHA (ci.yml:30,32,113); the gitleaks image is pinned by sha256 digest (ci.yml:53). The setup-node npm cache (ci.yml:35-36) is keyed on the lockfile; GitHub scopes caches written by pull_request runs to the PR merge ref, so a fork cannot seed the cache read by the push job on hardened, and npm ci verifies each tarball against the lockfile integrity anyway.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "haval-h6-mqtt/package.json",
+          "haval-h6-mqtt/package-lock.json",
+          "Dockerfile",
+          ".github/workflows/ci.yml"
+        ],
+        "invariant": "Dependency resolution for tests and the image is lockfile-bound with integrity and runs no install scripts.",
+        "method": "source",
+        "result": "package.json pins exact versions (package.json:18-27). package-lock.json is lockfileVersion 3 with 131 entries; every non-root entry resolves to https://registry.npmjs.org/ and carries an integrity hash, and no entry has hasInstallScript (parsed with python3 -I json over the file). Every npm ci runs with --ignore-scripts (ci.yml:37,100,110; Dockerfile:8).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "Dockerfile",
+          ".dockerignore"
+        ],
+        "invariant": "Only intended release inputs enter the image; no secret, override, allowlist, state or fixture reaches the build context.",
+        "method": "source",
+        "result": ".dockerignore is a deny-all allowlist (.dockerignore:2) that re-admits only haval-h6-mqtt/package.json, package-lock.json and top-level *.js (.dockerignore:3-5). secrets/, docker-compose.override.yml, proxy/allowlist.local.txt, data/, test/ and node_modules/ are therefore excluded. Dockerfile copies only those inputs (Dockerfile:7,9), deletes eslint.config.js (Dockerfile:10), and both stages are digest-pinned (Dockerfile:5,15). The final image runs as 65532 on distroless (Dockerfile:22-25).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          ".github/workflows/ci.yml",
+          "scripts/init-secrets.sh",
+          "test/integration/run.sh"
+        ],
+        "invariant": "PR-controlled container images or shell interpolation in CI cannot reach a trusted job or credential.",
+        "method": "source",
+        "result": "The image job runs scripts/init-secrets.sh (ci.yml:85), which docker-runs the image named by the checked-out docker-compose.yml (scripts/init-secrets.sh:34,37), and the integration job runs test/integration/run.sh (ci.yml:101), which interpolates container output into bash -c checks (test/integration/run.sh:68,83-85). In a fork PR all of these inputs are already contributor-controlled code in the same secret-less, contents:read, non-publishing job; on push to hardened they are reviewed repository content. No crossing into a higher-trust job exists.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          ".github/dependabot.yml",
+          ".pre-commit-config.yaml"
+        ],
+        "invariant": "Automated update and developer-hook paths do not merge or execute unreviewed code with elevated authority.",
+        "method": "source",
+        "result": "Dependabot only opens weekly PRs for npm, docker, docker-compose and github-actions (.github/dependabot.yml:4-20); the repository has no auto-merge workflow, and Dependabot PRs run the same pull_request workflow with a read-only token. The pre-commit gitleaks hook uses the mutable tag rev v8.28.0 (.pre-commit-config.yaml:3-4); it runs only on a developer workstation and the tag writer is the same gitleaks maintainer set that authors the pinned code, so no new trust is added (recorded as hardening).",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "The sbom job runs npx --yes @cyclonedx/cyclonedx-npm@6.0.1 (.github/workflows/ci.yml:112): the tool version is pinned but its transitive dependency tree resolves at run time without a lockfile. No in-repo consumer verifies or promotes the SBOM and the job holds no secret, so this is integrity hardening only; install the tool from a committed lockfile or pin its tarball integrity.",
+      "docker build --pull (.github/workflows/ci.yml:65) is harmless because both FROM lines are digest-pinned (Dockerfile:5,15); it only refreshes the same digests.",
+      ".pre-commit-config.yaml:4 uses the mutable tag rev v8.28.0 for the gitleaks hook; pin it to a commit SHA so a moved tag cannot change the developer-workstation hook.",
+      "MQTT on mqtt_internal is plaintext (docker-compose.yml:41, mosquitto/mosquitto.conf:4-5). A co-attached container with the default NET_RAW capability (Home Assistant, attached per README.md:147) could ARP-spoof the bridge and read MQTT passwords; consider a TLS listener or keeping HA on a separate network with a bridge.",
+      "init-secrets.sh makes the secret files 0644 (scripts/init-secrets.sh:32) and relies on the 0700 secrets/ directory for host isolation; a future move of the files out of that directory would expose them to other host users.",
+      "Mosquitto acl_file in 2.1.2 accepts every SUBSCRIBE and filters only on delivery (documented at test/integration/acl.test.js:14-17); a subscription-level deny would give defense in depth against delivery-path regressions."
+    ]
+  },
+  {
+    "coverage_id": "README.md%23Update%20from%20upstream%20%28keep%20the%20route%20allowlist%29::.github%2Fworkflows%2Fci.yml%23permissions::.github::SUPPLY-CHAIN-AND-RELEASE.md%23Untrusted%20code%20in%20a%20privileged%20workflow",
+    "canonical_refs": {
+      "surface": "README.md#Update from upstream (keep the route allowlist)",
+      "boundary": ".github/workflows/ci.yml#permissions",
+      "subsystem": ".github",
+      "attack_class": "SUPPLY-CHAIN-AND-RELEASE.md#Untrusted code in a privileged workflow"
+    },
+    "surface": "Upstream sync and default-branch workflows",
+    "boundary": "Publish authority and the read-only source-scan guard across upstream merges",
+    "subsystem": "ci and fork lifecycle",
+    "attack_class": "Untrusted code in a privileged workflow",
+    "starting_paths": [
+      "README.md",
+      "haval-h6-mqtt/test/unit/readonly.test.js",
+      ".github/workflows/ci.yml",
+      ".github/dependabot.yml",
+      ".dockerignore"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "SUPPLY-CHAIN-AND-RELEASE.md#Core discipline",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Untrusted code in a privileged workflow",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Mutable and unbound build inputs",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Build-context inclusion",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Universal moves",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 3,
+    "status": "candidate",
+    "agent_id": "h8-upstream",
+    "reviewed_paths": [
+      ".dockerignore",
+      ".github/dependabot.yml",
+      ".github/workflows/ci.yml",
+      ".github/workflows/docker-build-publish.yml",
+      ".gitleaksignore",
+      "Dockerfile",
+      "README.md",
+      "docker-compose.yml",
+      "docs/AUDIT.md",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/test/unit/readonly.test.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          ".github/workflows/docker-build-publish.yml",
+          "README.md",
+          "docs/AUDIT.md"
+        ],
+        "invariant": "The fork's default branch must not carry a workflow that can publish or sign an image with the fork's GITHUB_TOKEN when main is synced from upstream.",
+        "method": "source",
+        "result": "On branch main (read with git show main:.github/workflows/docker-build-publish.yml; main == upstream/main == bafa10e) the upstream workflow is intact: push to main or v*.*.* tags (lines 8-12), job permissions packages: write and id-token: write (27-32), docker/login-action with secrets.GITHUB_TOKEN (59-65), build-push-action push of :latest and a date tag to ghcr.io/${{ github.repository }} (77-86), cosign keyless sign (93-101), and a mutable actions/checkout@v4 (41). README.md:167 says main mirrors upstream/main; README.md:193-198 acknowledges the workflow and lists three owner steps. README.md:31 and docs/AUDIT.md:216 still state there is no publish workflow / it is deleted on hardened. Nothing in source neutralizes the file on main; only GitHub settings do.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          "README.md",
+          ".github/workflows/ci.yml",
+          ".github/workflows/docker-build-publish.yml",
+          ".github/dependabot.yml"
+        ],
+        "invariant": "The documented upstream update (README.md:170-171, git merge upstream/main into hardened) must not silently import an upstream-authored workflow into hardened, and main mirroring must not add workflows unreviewed.",
+        "method": "local",
+        "result": "Bounded fixture on a scratch clone of the target (host git, hooks disabled via core.hooksPath=/dev/null, GIT_CONFIG_GLOBAL=/dev/null, GIT_CONFIG_NOSYSTEM=1, no network, no target script executed; this was not the docker sandbox template because no target-controlled code ran and the node image has no git). Scenario A: a dummy upstream commit adding .github/workflows/release.yml with permissions contents/packages/id-token: write merged into hardened with exit 0 and 0 conflicts; the file is in the merged hardened tree, and the readonly scan root (haval-h6-mqtt top-level *.js) has no .github entry. Scenario B: an upstream edit to docker-build-publish.yml gives a modify/delete conflict (so only edits to the known file are surfaced). Scenario C: a fast-forward of main carries both workflows, each with write permissions on push. hardened .github/dependabot.yml has no target-branch, and main has no dependabot.yml. The result is deterministic git semantics and is supporting, not load-bearing.",
+        "artifact": "agents/h8-upstream/artifacts/check-1.txt"
+      },
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          "README.md",
+          ".github/workflows/ci.yml"
+        ],
+        "invariant": "The README owner steps must bound every upstream-authored workflow, not only the one known file.",
+        "method": "source",
+        "result": "README.md:174-184 lists merge-touch areas (packaging, carConnector.js/mqtt.js/index.js, new endpoints) and omits .github/ and the Dockerfile. README.md:186-191 checks (lint, npm test, npm audit, integration) inspect no workflow file. README.md:196 (allow SHA-pinned actions) restricts uses: steps only, not run: steps; README.md:197 disables docker-build-publish.yml by file name, so a new upstream file name is not covered; README.md:198 (default token read-only) sets only the default, which an explicit permissions: key in the incoming workflow requests past (the existing file already does so at lines 27-32 on main). ci.yml:12-13 permissions are per-file and do not apply to another workflow file. The GitHub-side semantics are host facts and are listed as blockers.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          ".dockerignore",
+          "Dockerfile",
+          "haval-h6-mqtt/test/unit/readonly.test.js"
+        ],
+        "invariant": "The read-only source scan must cover exactly the set of production JavaScript files that enter the image.",
+        "method": "source",
+        "result": "Equivalent. .dockerignore:2-5 admits only haval-h6-mqtt/package.json, package-lock.json and haval-h6-mqtt/*.js; Dockerfile:9 copies haval-h6-mqtt/*.js (top level) and Dockerfile:10 removes eslint.config.js; readonly.test.js:12 scans readdirSync(haval-h6-mqtt) top-level *.js minus eslint.config.js. A new upstream top-level .js file is both shipped and scanned; a subdirectory .js file is neither shipped nor scanned. Dependencies (npm ci --omit=dev --ignore-scripts, Dockerfile:8) are outside the scan by design.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          "haval-h6-mqtt/test/unit/readonly.test.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/index.js",
+          "docs/AUDIT.md"
+        ],
+        "invariant": "The source-scan guard that README.md:179-181 relies on must not drop live code before matching, and must pin the network surface to the route-guarded client.",
+        "method": "local",
+        "result": "Sandboxed harness (docker template, no network, read-only target) confirmed the two stripping regexes are present verbatim in readonly.test.js:16-17 and that they drop live code: a template literal `${base}//${x}`; client.sendCmd(u) and a span from a \"gwmbrasil/*\" string to a later \"*/\" string both lose the sendCmd match, while the plain control still matches. Source: only httpClient.js requires node:http/https/tls (httpClient.js:15-17) and every request passes guard.check (httpClient.js:103), but the scan forbids only axios/dotenv requires (readonly.test.js:31), not node:https/net/tls/fetch in other files. docs/AUDIT.md:168-170 records an obfuscated upstream command client in history. The runtime route allowlist (routes.js, peer-owned) and the Squid allowlist still block a command request, so this is a guard weakness recorded as hardening, not a finding.",
+        "artifact": "agents/h8-upstream/artifacts/check-2.txt"
+      },
+      {
+        "agent_id": "h8-upstream",
+        "reviewed_paths": [
+          ".github/dependabot.yml",
+          ".gitleaksignore"
+        ],
+        "invariant": "Dependency-update and secret-scan controls named for the fork must apply to the branch that ships.",
+        "method": "source",
+        "result": "dependabot.yml (lines 1-20) exists only on hardened, has no target-branch, and main (the default branch) has no dependabot.yml; Dependabot reads its config from the default branch, so the weekly updates for npm, docker, docker-compose and github-actions on hardened are inert (host fact; recorded as hardening). .gitleaksignore:4 pins one commit:file:rule fingerprint, so a re-added key in a new commit is still reported.",
+        "artifact": null
+      },
+      {
+        "agent_id": "v5-upstreamsync",
+        "reviewed_paths": [
+          ".github/workflows/ci.yml",
+          ".github/workflows/docker-build-publish.yml",
+          "README.md",
+          "docker-compose.yml",
+          "docs/AUDIT.md",
+          "haval-h6-mqtt/test/unit/readonly.test.js"
+        ],
+        "invariant": "Phase 3 independent candidate validation of upstream-sync/.github/workflows:fork-token-publish-authority",
+        "method": "local",
+        "result": "decision: needs_validation",
+        "artifact": "agents/v5-upstreamsync/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "upstream-sync/.github/workflows:fork-token-publish-authority"
+    ],
+    "unresolved": [],
+    "origin": "critic-2 missing_units",
+    "hardening_notes": [
+      "README.md:31 ('no publish workflow') and docs/AUDIT.md:216 ('Workflow deleted on hardened') overstate the control: deletion on a non-default branch does not remove docker-build-publish.yml from main, where push-to-main runs read it. Correct the claim or delete the file on main.",
+      ".github/dependabot.yml exists only on hardened and has no target-branch; main (the default branch) has none, so Dependabot version updates for the pinned npm, docker, compose and actions inputs are inert. Put the config on the default branch with target-branch: hardened, or make hardened the default branch.",
+      "readonly.test.js:16-17 strips comments with raw-text regexes that also drop live code: fixtures `${base}//${x}`; client.sendCmd(u) and a \"gwmbrasil/*\" ... \"*/\" span hide sendCmd from the scan (agents/h8-upstream/artifacts/check-2.txt). Strip with a tokenizer (for example the ESLint parser already in devDependencies) or match on unstripped text with an explicit allowlist of comment lines. The runtime route allowlist still blocks the request.",
+      "readonly.test.js:31 forbids only axios/dotenv requires; add a check that only httpClient.js requires node:http, node:https, node:tls or node:net and that no file calls fetch(, so an upstream merge cannot add a request path that skips guard.check (httpClient.js:103). docs/AUDIT.md:168-170 records obfuscated upstream command code, which name-based patterns do not catch.",
+      "README.md:174-184 merge checklist: add .github/ (delete any upstream workflow) and the Dockerfile/.dockerignore, and add a unit test that .github/workflows contains only ci.yml."
+    ],
+    "validation_decision": "needs_validation"
+  },
+  {
+    "coverage_id": "docker-compose.yml%23services::docker-compose.yml%23networks.mqtt_internal::.::CLOUD-AND-DEPLOYMENT.md%23Host%20or%20control-plane%20capability%20exposure",
+    "canonical_refs": {
+      "surface": "docker-compose.yml#services",
+      "boundary": "docker-compose.yml#networks.mqtt_internal",
+      "subsystem": ".",
+      "attack_class": "CLOUD-AND-DEPLOYMENT.md#Host or control-plane capability exposure"
+    },
+    "surface": "Compose deployment",
+    "boundary": "Container isolation, networks and secret mounts",
+    "subsystem": "deployment",
+    "attack_class": "Host or control-plane capability exposure",
+    "starting_paths": [
+      "docker-compose.yml",
+      "docker-compose.override.yml.example",
+      "Dockerfile",
+      ".dockerignore",
+      "test/integration/compose.it.yml"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "CLOUD-AND-DEPLOYMENT.md#Core discipline",
+      "CLOUD-AND-DEPLOYMENT.md#Host or control-plane capability exposure",
+      "CLOUD-AND-DEPLOYMENT.md#Secret exposure across workload boundaries",
+      "CLOUD-AND-DEPLOYMENT.md#Security-control precedence drift",
+      "CLOUD-AND-DEPLOYMENT.md#Universal moves",
+      "CLOUD-AND-DEPLOYMENT.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h4-platform",
+    "reviewed_paths": [
+      ".dockerignore",
+      "Dockerfile",
+      "README.md",
+      "docker-compose.override.yml.example",
+      "docker-compose.yml",
+      "scripts/init-secrets.sh",
+      "test/integration/compose.it.yml"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "Dockerfile"
+        ],
+        "invariant": "No service can select privileged mode, added capabilities, host namespaces, host devices, the container runtime socket or writable host paths.",
+        "method": "source",
+        "result": "No service in docker-compose.yml sets privileged, cap_add, devices, pid/ipc/network_mode host, ports, or a docker.sock mount. All three services merge x-hardening: read_only, cap_drop ALL, no-new-privileges (docker-compose.yml:17-21,27,58,82), run as fixed non-root users (docker-compose.yml:30,59,83) with memory and CPU limits. Host binds are only ./proxy/squid.conf, ./proxy/allowlist.txt, ./mosquitto/mosquitto.conf, ./mosquitto/acl and ./secrets/mosquitto_passwd, all :ro (docker-compose.yml:66-68,84-87). The image user is 65532 (Dockerfile:22).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "README.md"
+        ],
+        "invariant": "The reader and broker have no direct route outside the internal network, and only squid joins the egress network.",
+        "method": "source",
+        "result": "gwm-reader and mosquitto join only mqtt_internal (docker-compose.yml:48,89); mqtt_internal is internal: true (docker-compose.yml:110-111); only squid also joins egress (docker-compose.yml:69,113). The only documented extra peer is Home Assistant, which the owner attaches to gwm-reader_mqtt_internal as an external network (README.md:147-148); that peer can reach mosquitto:1883 (assessed in the broker unit) and squid:3128 (peer-owned squid unit).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "scripts/init-secrets.sh"
+        ],
+        "invariant": "Each secret is mounted only into the workload that needs it, and no secret enters environment variables, command lines or a shared volume.",
+        "method": "source",
+        "result": "The GWM username, password and the gwm_reader MQTT password are compose file-secrets mounted only into gwm-reader (docker-compose.yml:45,99-102); the reader receives MQTT_USERNAME but no secret value in environment (docker-compose.yml:33-43). Mosquitto receives only the hashed password file (docker-compose.yml:87); squid receives no secret. reader-data (state.json and tokens) is mounted only into gwm-reader (docker-compose.yml:46-47,104-105). init-secrets.sh keeps secrets/ at 0700 and makes the files 0644 only so the non-root container users can read their bind mounts (scripts/init-secrets.sh:13-15,29-32).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "docker-compose.override.yml.example",
+          "test/integration/compose.it.yml"
+        ],
+        "invariant": "No maintained overlay re-enables live mode by default, weakens TLS or isolation, or adds capability in the owner deployment.",
+        "method": "source",
+        "result": "The base keeps GWM_LIVE_ENABLED default false (docker-compose.yml:34). The override example only adds GWM_VIN, commented client-certificate paths and replaces the allowlist mount at the same container target (docker-compose.override.yml.example:3-18); Compose merges volumes by target path, so the placeholder file is replaced, not duplicated. compose.it.yml (project gwm-reader-it, test only) adds GWM_EXTRA_CA_FILE and a throwaway CA, DEBUG logs and a mock-gwm with cap_add NET_BIND_SERVICE on egress only (test/integration/compose.it.yml:11,27-37); none of this is in the owner project. The image name gwm-reader:local (docker-compose.yml:25-26) resolves to the docker.io/library namespace if pulled, which no third party can publish.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "Dockerfile",
+          ".dockerignore"
+        ],
+        "invariant": "The deployed reader image contains no build-time secret or developer artifact.",
+        "method": "source",
+        "result": "The build context allowlist (.dockerignore:2-5) and copy steps (Dockerfile:7,9,17,19) admit only production JS, package metadata and production node_modules; the /data directory is created 0700 for 65532 (Dockerfile:11-13).",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "The sbom job runs npx --yes @cyclonedx/cyclonedx-npm@6.0.1 (.github/workflows/ci.yml:112): the tool version is pinned but its transitive dependency tree resolves at run time without a lockfile. No in-repo consumer verifies or promotes the SBOM and the job holds no secret, so this is integrity hardening only; install the tool from a committed lockfile or pin its tarball integrity.",
+      "docker build --pull (.github/workflows/ci.yml:65) is harmless because both FROM lines are digest-pinned (Dockerfile:5,15); it only refreshes the same digests.",
+      ".pre-commit-config.yaml:4 uses the mutable tag rev v8.28.0 for the gitleaks hook; pin it to a commit SHA so a moved tag cannot change the developer-workstation hook.",
+      "MQTT on mqtt_internal is plaintext (docker-compose.yml:41, mosquitto/mosquitto.conf:4-5). A co-attached container with the default NET_RAW capability (Home Assistant, attached per README.md:147) could ARP-spoof the bridge and read MQTT passwords; consider a TLS listener or keeping HA on a separate network with a bridge.",
+      "init-secrets.sh makes the secret files 0644 (scripts/init-secrets.sh:32) and relies on the 0700 secrets/ directory for host isolation; a future move of the files out of that directory would expose them to other host users.",
+      "Mosquitto acl_file in 2.1.2 accepts every SUBSCRIBE and filters only on delivery (documented at test/integration/acl.test.js:14-17); a subscription-level deny would give defense in depth against delivery-path regressions."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FcarConnector.js%23GwmClient.authed::haval-h6-mqtt%2Fbackoff.js%23LoginLimiter::haval-h6-mqtt::ATTACK-CLASSES.md%23Business%20logic",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/carConnector.js#GwmClient.authed",
+      "boundary": "haval-h6-mqtt/backoff.js#LoginLimiter",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "ATTACK-CLASSES.md#Business logic"
+    },
+    "surface": "Session renewal and login",
+    "boundary": "Login cap, backoff and halt",
+    "subsystem": "reader process",
+    "attack_class": "Business logic",
+    "starting_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/backoff.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/store.js",
+      "haval-h6-mqtt/index.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Business logic",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h3-secrets",
+    "reviewed_paths": [
+      "haval-h6-mqtt/backoff.js",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/store.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/backoff.js"
+        ],
+        "invariant": "Every outbound login passes LoginLimiter.tryAcquire, and the 3-per-rolling-hour cap is persisted before the request is sent and cannot be raced",
+        "method": "source",
+        "result": "The only login path is GwmClient.login (carConnector.js:162-192). It calls limiter.tryAcquire() first (carConnector.js:163). authed() reaches it only at carConnector.js:207 and 214. tryAcquire is synchronous: it prunes, checks, pushes and calls store.update before it returns (backoff.js:54-63). Concurrent callers therefore cannot pass the check together. If store.update throws (data dir unwritable), login throws before any HTTP request, so the cap fails closed. login_capped carries retryAfterMs, and reader.onFailure honours it (reader.js:184, 260). No path sends a login outside the cap.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/store.js",
+          "haval-h6-mqtt/index.js",
+          "haval-h6-mqtt/carConnector.js"
+        ],
+        "invariant": "Three consecutive authentication failures halt polling, the halt is persisted, and only the owner clears it",
+        "method": "source",
+        "result": "Auth-flagged GwmErrors come from parse on 401/403 or AUTH_CODES (carConnector.js:155,158) and from any non-SUCCESS login except BUSY_CODES (carConnector.js:175-178). They increment reader.authFailures on both timers (reader.js:178, 252-253). The counter resets only after a full successful status cycle (reader.js:161). At 3 failures, halt() sets stopped, clears the timers and persists halted (reader.js:190-201). start() refuses to poll while halted is set (reader.js:84-90). Only the owner CLI --reset-halt clears it (index.js:19-24). authFailures is in memory, but the persisted login cap bounds a crash-restart loop to 3 logins per hour. Rate-limit, busy and login_capped errors do not count toward the halt by design. No lower-trust principal can write /data (reader-data volume, store.js atomic tmp+rename, store.js:389-398).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/backoff.js",
+          "haval-h6-mqtt/store.js"
+        ],
+        "invariant": "Bounded local check of the cap under concurrency, a corrupt state file and a backward clock step",
+        "method": "local",
+        "result": "Sandbox harness (no network, dummy data, fake transport). (A) Two concurrent authed() calls without a usable token sent 2 logins (no single-flight), then a third login succeeded and a fourth failed with login_capped: the cap held at 3. (B) With 3 recent attempts and halted persisted, tryAcquire returned ok=false. After state.json was overwritten with invalid JSON, Store logged 'state file unreadable; starting empty', halted became null and tryAcquire returned ok=true: the store fails open. (C) With 3 persisted attempts and the clock moved back 120 s, tryAcquire returned ok=true because prune drops a > t (backoff.js:51). B and C need owner or host control of /data or the clock, so they are hardening, not findings.",
+        "artifact": "agents/h3-secrets/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "Fixture-mode credential egress (config.js:49, carConnector.js:170-172; local check-1 D): any two non-gwmcloud URLs select fixture mode without GWM_LIVE_ENABLED. loadConfig still loads the real /run/secrets credentials, and login sends the account and the MD5 password over plain http if the URLs say so. The MD5 alone is enough to sign in. A mistyped or migrated GWM domain silently bypasses the live gate. Fix: require an explicit GWM_FIXTURE=true. In fixture mode, refuse to start when /run/secrets/gwm_* are the defaults, or require https. Regression test: liveGate with two non-gwmcloud URLs and no fixture flag returns run:false.",
+      "No single-flight login (carConnector.js:206-222; local check-1 A): the status and charge timers that call authed() together each log in, so one renewal uses 2 slots of the 3-per-hour cap. README says that two sign-ins sign each other out, so this can create self-inflicted auth failures toward the halt. Fix: memoize the in-flight login promise in GwmClient and reuse it, so that concurrent authed() calls perform exactly one login.",
+      "Store.load fails open (store.js:24-31; local check-1 B): when state.json is unreadable, the store starts empty and silently clears the persisted halt flag and the login-cap history. Fix: on a non-ENOENT read or parse error, exit with EX_CONFIG, or treat the cap as exhausted for one window and keep halted=true until the owner runs --reset-halt.",
+      "LoginLimiter.prune drops future-dated attempts (backoff.js:51; local check-1 C): a backward clock step resets the persisted cap. Fix: clamp entries with a > t to t, so they still count for the window.",
+      "MQTT_URL is not validated (config.js:174): mqtt://user:pass@host bypasses the file-only secret rule. The MQTT password is also never passed to registerSecret (index.js:65, config.js:133). Fix: parse MQTT_URL, refuse userinfo, and call registerSecret(config.mqttPassword) at startup.",
+      "unregisterSecret on token rotation (carConnector.js:134-135, 179-180) removes old tokens from the redactor. The secret Set has no reference count, so a collision with another registered value also unregisters that value. Opaque (non-JWT) old tokens would then log in clear. Fix: keep rotated tokens registered for the process lifetime.",
+      "first-run.sh report section 1 drops the Squid client address field (first-run.sh:39 prints $3,$5; squid.conf:26 puts %>a in $2). CONNECTs from any container on mqtt_internal (HA, others) look like reader attempts during the allowlist review. Fix: print $2 too, or filter on the gwm-reader container IP.",
+      "derive-dashboard.js denylist (derive-dashboard.js:20) does not cover toggle, url or fire-dom-event actions, or hass.callService inside custom:button-card [[[ ]]] templates. Fix: switch to an allowlist of action types (more-info, navigate, none), and reject templates that reference hass.call*.",
+      "test/integration/run.sh:83-88 interpolates netprobe JSON values into bash -c. This is safe today because the values are Node constants or integers. Fix: pass them as positional arguments (bash -c '...' _ \"$v\"), as run.sh:112 already does.",
+      "init-secrets.sh:32 makes gwm_username and gwm_password mode 0644. Their confidentiality on the host depends only on secrets/ staying 0700 (init-secrets.sh:12-14). Document this, or use a group-readable 0640 with the container gid."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FcarConnector.js%23GwmClient.getChargeLogs::haval-h6-mqtt%2Freader.js%23pollCharge::haval-h6-mqtt::RESOURCE-EXHAUSTION-AND-AVAILABILITY.md%23Unbounded%20buffering%20and%20cardinality",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/carConnector.js#GwmClient.getChargeLogs",
+      "boundary": "haval-h6-mqtt/reader.js#pollCharge",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality"
+    },
+    "surface": "GWM charge-log responses and MQTT outgoing store",
+    "boundary": "Bounded charge-history processing and publishing",
+    "subsystem": "reader process",
+    "attack_class": "Unbounded buffering and cardinality",
+    "starting_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/httpClient.js",
+      "mosquitto/mosquitto.conf",
+      "docker-compose.yml",
+      "haval-h6-mqtt/test/unit/reader.test.js"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Core discipline",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Superlinear parsing, matching, or evaluation",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Universal moves",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 2,
+    "status": "covered",
+    "agent_id": "h6-avail",
+    "reviewed_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/package-lock.json",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/routes.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h6-avail",
+        "reviewed_paths": [
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/routes.js"
+        ],
+        "invariant": "The untrusted GWM charge-log response must have an effective size/cardinality bound before it is buffered and republished.",
+        "method": "source",
+        "result": "The transport caps every response body. httpClient.js:21 sets MAX_BODY_BYTES = 4*1024*1024 and lines 143-150 destroy the request with a GwmError once cumulative response bytes exceed 4 MiB. getChargeLogs (carConnector.js:262-270) sends pageNum/pageSize=100 but returns data.list verbatim with no length or per-item cap, so list cardinality is not self-limited; it is instead bounded by the 4 MiB raw-body cap (about 10^5 minimal {startTime,endTime} entries). routes.js:45-59 confirms the POST /vehicleCharge/getChargeLogs path is reachable (allowlisted) with a pinned body, so the path is live. An effective upstream bound exists; the input-to-buffer path is not unbounded.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h6-avail",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/package-lock.json"
+        ],
+        "invariant": "The MQTT outgoing store must not accumulate without bound when the broker is slow, offline, or the charge list is large.",
+        "method": "source",
+        "result": "pollCharge (reader.js:241-250) formats the bounded list and publishes it as ONE retained QoS1 attribute message (gwmbrasil/<id>/charging_history/attributes), not one message per entry, so a single poll adds one message of a few MiB at most. The poll loop is strictly sequential: scheduleCharge/scheduleStatus (reader.js:107-123) schedule the next cycle only after the prior async cycle resolves, and each publish is awaited. mqtt 5.16.0 (package-lock.json:12) stores QoS1 packets when disconnected (node_modules/mqtt build/lib/client.js:1122-1128 -> _storePacket) and resolves the reader's publish promise only on PUBACK (outgoing[messageId].cb). Therefore an unreachable broker STALLS the awaiting cycle instead of spinning and accumulating per-cycle; in-flight/outgoing state is bounded to a single cycle. No unbounded buffering across cycles.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "origin": "critic-1 missing_units",
+    "hardening_notes": [
+      "haval-h6-mqtt/carConnector.js:262-270 getChargeLogs returns data.list verbatim; add a reader-side list.slice(0, 100) (the pageSize:\"100\" at :266 is only a request hint the server may ignore) so the retained charging_history attribute size does not depend on the server honoring the page size.",
+      "haval-h6-mqtt/reader.js:56-58 formatChargeLogs constructs four Intl date/time formatters per charge entry; linear with a large constant and self-limited to the reader's own 0.5 cpu, so hardening not a finding - hoist the formatters out of the map callback.",
+      "mosquitto/mosquitto.conf omits max_connections, max_queued_messages, memory_limit and message_size_limit; add explicit values (message_size_limit sized just above the ~6 MiB retained charge payload - the 4 MiB input body expands ~1.4x through formatChargeLogs) as defense-in-depth against a compromised or credential-leaked peer on mqtt_internal, since the container memory cap is 64m.",
+      "proxy/squid.conf omits client_lifetime and per-client maxconn; add them to bound long-lived or many CONNECT tunnels from an internal peer, complementing the 128m container memory cap.",
+      "haval-h6-mqtt/mqtt.js:138-151 publish() sets no per-message timeout, so an awaited QoS1 publish promise pends for the entire broker outage; reliability hardening (trigger is broker unavailability, not lower-trust input, so not a finding) - add a publish deadline or a bounded pending-publish count."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FcarConnector.js%23GwmClient.parse::haval-h6-mqtt%2Flogger.js%23redactString::haval-h6-mqtt::RESOURCE-EXHAUSTION-AND-AVAILABILITY.md%23Superlinear%20parsing%2C%20matching%2C%20or%20evaluation",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/carConnector.js#GwmClient.parse",
+      "boundary": "haval-h6-mqtt/logger.js#redactString",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Superlinear parsing, matching, or evaluation"
+    },
+    "surface": "GWM API JSON responses",
+    "boundary": "Bounded work per poll in the shared reader",
+    "subsystem": "reader process",
+    "attack_class": "Superlinear parsing, matching, or evaluation",
+    "starting_paths": [
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Core discipline",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Superlinear parsing, matching, or evaluation",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Reachable fatal error or deadlock",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Universal moves",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "h2-gwmresp",
+    "reviewed_paths": [
+      "docker-compose.yml",
+      "haval-h6-mqtt/backoff.js",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/carTextUtil.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/backoff.js"
+        ],
+        "invariant": "Every GWM-controlled string that reaches logger.redactString has a per-field size bound below the 4 MiB body cap.",
+        "method": "source",
+        "result": "The only bound is MAX_BODY_BYTES = 4 MiB (httpClient.js:21,145). GwmClient.parse turns body.code into apiCode with String() and no length or shape check (carConnector.js:150). requireData builds errorClass `api_${apiCode}` (carConnector.js:227); Reader.onFailure logs it through safeError and the logger's redact(), which runs redactString on every string field (reader.js:185, logger.js:104,144). The login variant puts apiCode in the message (carConnector.js:177) but LoginLimiter caps it at 3 per hour (backoff.js:57); requireData runs on every poll. The sibling toGwmError slices to 200 chars (httpClient.js:173), but parse() has no matching cap. redactString runs unanchored EMAIL, JWT and COORD_PAIR regexes (logger.js:18,20,25,81-88) with quadratic backtracking on long runs.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/logger.js"
+        ],
+        "invariant": "redactString and registerSecret do linear work in the input size.",
+        "method": "local",
+        "result": "Sandboxed growth curve at n = 2000/4000/8000/16000: EMAIL_alnum_run 1.60/6.55/77.21/209.58 ms, COORD_PAIR_spaces 1.97/5.94/77.75/202.86 ms, JWT_eyJ_repeat 2.61/11.57/101.71/386.34 ms, against a linear baseline of 0.06-0.34 ms. That is about 3-4x per doubling (quadratic). registerSecret with 1000/2000/4000/8000 unique values took 8.21/20.16/194.94/771.77 ms (a full resort for each new value).",
+        "artifact": "agents/h2-gwmresp/artifacts/check-1.txt"
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/mqtt.js"
+        ],
+        "invariant": "One hostile GWM envelope cannot make a poll cycle do superlinear work in the shared reader process.",
+        "method": "local",
+        "result": "Sandboxed run of the real GwmClient + Reader + logger with an in-memory transport. A body.code of 2000/4000/8000/16000 'a' chars took 4.9/12.5/113.4/466.4 ms per pollStatus (quadratic). The run used the login-rejection path, which has the same safeError -> redactString sink as requireData. A requireData failure published the raw api code (320 chars, including '<img src=x>') as error_class in the retained reader_error attributes. acquireVehicles with 1001/2001/4001 vehicles took 13.2/86.4/211.4 ms.",
+        "artifact": "agents/h2-gwmresp/artifacts/check-2.txt"
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/snapshot.js",
+          "haval-h6-mqtt/carTextUtil.js",
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/mqtt.js"
+        ],
+        "invariant": "Hostile status shapes cannot reach an unhandled exception or process exit (reachable fatal error).",
+        "method": "local",
+        "result": "An item value nested 200000 levels deep got through JSON.parse. Its JSON.stringify RangeError was caught in pollStatus (error_class internal, 'Maximum call stack size exceeded'), and the reader returned a backoff delay. A {toString:\"x\"} value gave a caught TypeError. The __proto__ and constructor codes were harmless. unhandled_rejections=0 and the process stayed alive. No fatal path was found.",
+        "artifact": "agents/h2-gwmresp/artifacts/check-3.txt"
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/snapshot.js"
+        ],
+        "invariant": "A supervisor detects and recovers a reader whose event loop is blocked.",
+        "method": "source",
+        "result": "gwm-reader has restart: on-failure and no healthcheck (docker-compose.yml:29; healthchecks exist only for squid and mosquitto). It has a 0.5 CPU limit (docker-compose.yml:54). A blocked but live process does not restart. The MQTT client sets no keepalive override (mqtt.js:114-123), so a starved event loop stops PINGREQ. The retained LWT 'offline' then fires, and nothing is published (the reader_error publish comes after the log call, reader.js:185-186). snapshot.js does no string-heavy work (epochMs regex is anchored and linear).",
+        "artifact": null
+      },
+      {
+        "agent_id": "v2-havalh6mqtt",
+        "reviewed_paths": [
+          "docker-compose.yml",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/reader.js"
+        ],
+        "invariant": "Phase 3 independent candidate validation of haval-h6-mqtt/logger.js:redactString:quadratic-regex-on-unbounded-gwm-api-code",
+        "method": "local",
+        "result": "decision: confirmed (low)",
+        "artifact": "agents/v2-havalh6mqtt/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "haval-h6-mqtt/logger.js:redactString:quadratic-regex-on-unbounded-gwm-api-code"
+    ],
+    "unresolved": [],
+    "hardening_notes": [
+      "registerSecret re-sorts the whole secret set for each new value (logger.js:33-48). acquireVehicles registers 5 fields for each vehicle in an unbounded list (carConnector.js:238-245), which is quadratic: 4001 vehicles took 211 ms (check-2), and 8000 unique secrets took 772 ms (check-1). Registration is idempotent and this.vehicle caches the selection (reader.js:126), so the cost occurs about once for each process. Cap the vehicle list and resort once after a batch.",
+      "Validate the raw GWM api code before it goes into the retained reader_error attributes (reader.js:186). Today it is published unredacted and unbounded (up to the 4 MiB body), and mosquitto persists it (mosquitto.conf persistence true).",
+      "statusBySlug reads sensorTopics[code] without hasOwnProperty (reader.js:40-41), unlike publishStatus (reader.js:219). The codes __proto__ and constructor resolve to Object.prototype members. This is harmless today (check-3), but use Object.hasOwn for consistency.",
+      "A deeply nested or non-primitive item value makes JSON.stringify or String() throw inside publishStatus. The error is caught and backed off with no crash (check-3), but the whole status publication for that poll is skipped. Validate item values as primitives and bound their length before publishing.",
+      "GWM strings such as appShowSeriesName, color and engineType, and every mapped sensor value, are published retained with no length cap (reader.js:149, reader.js:220). HA rejects states over 255 characters. Cap them at ingest.",
+      "GWM-supplied identifier fields (showedVin, imsi, simIccid, engineNo, licenseNumber) are registered as redaction secrets with only a 4-character minimum (carConnector.js:240-244). A hostile value such as 'poll' or 'auth' would blank those words in every later log line. Register only id-shaped values."
+    ],
+    "validation_decision": "confirmed"
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FcarConnector.js%23GwmClient.parse::haval-h6-mqtt%2Freader.js%23Reader.publishStatus::haval-h6-mqtt::ATTACK-CLASSES.md%23Injection",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/carConnector.js#GwmClient.parse",
+      "boundary": "haval-h6-mqtt/reader.js#Reader.publishStatus",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "ATTACK-CLASSES.md#Injection"
+    },
+    "surface": "GWM API JSON responses",
+    "boundary": "Republishing GWM data to MQTT, HA and logs",
+    "subsystem": "reader process",
+    "attack_class": "Injection",
+    "starting_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/snapshot.js",
+      "haval-h6-mqtt/carTextUtil.js",
+      "haval-h6-mqtt/map.js",
+      "ha/dashboard.yaml"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Injection",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "h2-gwmresp",
+    "reviewed_paths": [
+      "ha/dashboard.yaml",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/carTextUtil.js",
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/map.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/map.js"
+        ],
+        "invariant": "GWM data cannot select or alter MQTT topic names, and discovery configs cannot gain fields.",
+        "method": "source",
+        "result": "State topics use only map.js codes after a hasOwnProperty check (reader.js:219-222). VEHICLE_ID is owner config validated by regex (mqtt.js:24,111). The discovery payload is an object that goes through JSON.stringify (mqtt.js:139), so model only fills device.name and model as a JSON string (mqtt.js:72). No topic or discovery-structure injection was found.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/logger.js"
+        ],
+        "invariant": "GWM strings cannot forge log records.",
+        "method": "source",
+        "result": "Each record is one JSON.stringify line (logger.js:142-151). Newlines and quotes in values are escaped, and field keys from GWM never become top-level keys (fields are fixed by callers). No log-line forgery was found.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/carTextUtil.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/snapshot.js",
+          "haval-h6-mqtt/mqtt.js"
+        ],
+        "invariant": "GWM values interpolated into the pipe/at-delimited status_message cannot add records or markup.",
+        "method": "local",
+        "result": "Sandboxed run of GwmClient + Reader with an in-memory transport. A tire temperature value '20 | [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)' produced a retained gwmbrasil/h6/status_message/state that splits on '|' into an extra record. That record is a raw markdown link plus a remote image. The snapshot forwarded the raw item, plus an arbitrary code 'x<script>' with a nested value and unit '<b>'. The model state carried '**INJ**' verbatim.",
+        "artifact": "agents/h2-gwmresp/artifacts/check-2.txt"
+      },
+      {
+        "agent_id": "h2-gwmresp",
+        "reviewed_paths": [
+          "ha/dashboard.yaml"
+        ],
+        "invariant": "The shipped HA dashboard renders status_message parts as data, not as markdown.",
+        "method": "source",
+        "result": "The status card is type: markdown (ha/dashboard.yaml:856, 1530). It splits the state on '|' (861, 1535). It interpolates partes[3] (893, 1567) and the whole unknown item in the else branch '• {{ item }}' (899, 1573) straight into markdown content, with no escaping. The Jinja output is data (no second template evaluation), so this is markdown/HTML-subset injection, not template injection.",
+        "artifact": null
+      },
+      {
+        "agent_id": "v1-havalh6mqtt",
+        "reviewed_paths": [
+          "ha/dashboard.yaml",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/carTextUtil.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/reader.js"
+        ],
+        "invariant": "Phase 3 independent candidate validation of haval-h6-mqtt/carTextUtil.js:status_message:unescaped-gwm-value-in-pipe-delimited-markdown",
+        "method": "local",
+        "result": "decision: confirmed (low)",
+        "artifact": "agents/v1-havalh6mqtt/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "haval-h6-mqtt/carTextUtil.js:status_message:unescaped-gwm-value-in-pipe-delimited-markdown"
+    ],
+    "unresolved": [],
+    "hardening_notes": [
+      "registerSecret re-sorts the whole secret set for each new value (logger.js:33-48). acquireVehicles registers 5 fields for each vehicle in an unbounded list (carConnector.js:238-245), which is quadratic: 4001 vehicles took 211 ms (check-2), and 8000 unique secrets took 772 ms (check-1). Registration is idempotent and this.vehicle caches the selection (reader.js:126), so the cost occurs about once for each process. Cap the vehicle list and resort once after a batch.",
+      "Validate the raw GWM api code before it goes into the retained reader_error attributes (reader.js:186). Today it is published unredacted and unbounded (up to the 4 MiB body), and mosquitto persists it (mosquitto.conf persistence true).",
+      "statusBySlug reads sensorTopics[code] without hasOwnProperty (reader.js:40-41), unlike publishStatus (reader.js:219). The codes __proto__ and constructor resolve to Object.prototype members. This is harmless today (check-3), but use Object.hasOwn for consistency.",
+      "A deeply nested or non-primitive item value makes JSON.stringify or String() throw inside publishStatus. The error is caught and backed off with no crash (check-3), but the whole status publication for that poll is skipped. Validate item values as primitives and bound their length before publishing.",
+      "GWM strings such as appShowSeriesName, color and engineType, and every mapped sensor value, are published retained with no length cap (reader.js:149, reader.js:220). HA rejects states over 255 characters. Cap them at ingest.",
+      "GWM-supplied identifier fields (showedVin, imsi, simIccid, engineNo, licenseNumber) are registered as redaction secrets with only a 4-character minimum (carConnector.js:240-244). A hostile value such as 'poll' or 'auth' would blank those words in every later log line. Register only id-shaped values."
+    ],
+    "validation_decision": "confirmed"
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2Fconfig.js%23loadConfig::haval-h6-mqtt%2Flogger.js%23redact::haval-h6-mqtt::ATTACK-CLASSES.md%23Cryptography%20and%20secrets",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/config.js#loadConfig",
+      "boundary": "haval-h6-mqtt/logger.js#redact",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "ATTACK-CLASSES.md#Cryptography and secrets"
+    },
+    "surface": "Environment and secret files",
+    "boundary": "Secret confinement to the reader process",
+    "subsystem": "reader process",
+    "attack_class": "Cryptography and secrets",
+    "starting_paths": [
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/store.js",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/mqtt.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Cryptography and secrets",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h3-secrets",
+    "reviewed_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/store.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/config.js",
+          "haval-h6-mqtt/index.js"
+        ],
+        "invariant": "GWM and MQTT secrets enter only from files, and config errors never contain secret values or file contents",
+        "method": "source",
+        "result": "refusePlainSecrets runs before the live gate (index.js:27) and again in loadConfig (config.js:126). It refuses GWM_USERNAME, GWM_PASSWORD, PASSWORD, MQTT_PASSWORD and MQTT_PASS (config.js:62-74). readSecretFile reads NAME_FILE or /run/secrets/<name>. Its errors name only the variable or path (config.js:81-94), and readPem errors name only the variable (config.js:96-102). HTTPS_PROXY refuses embedded credentials (config.js:35, 156). MQTT_URL is not parsed, so userinfo in it would bypass the file-only rule (config.js:174). That needs owner action, so it is hardening.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/index.js"
+        ],
+        "invariant": "Every log sink passes the central redactor, and no credential, token, device id or MD5 reaches a log line",
+        "method": "source",
+        "result": "createLogger redacts msg and every field at all levels (logger.js:138-151). Sensitive keys are replaced (logger.js:15-16, 121). Strings are scrubbed of the registered exact secrets, JWT, HEX32, e-mail, VIN-like and coordinate patterns (logger.js:76-89). Errors are reduced to {error_class, message} without traversal (logger.js:102-107, 116). The username, password, MD5, deviceid and tokens are registered (carConnector.js:106-113, 122, 184-185). The request body and query are never logged; the route audit logs only method, host and path (httpClient.js:118). Errors built from transport failures contain only route and code (httpClient.js:169-174). DEBUG adds only 'mqtt reconnecting' (mqtt.js:125). The MQTT password is never registered with registerSecret, but no sink that carries it was found. Old tokens are unregistered on rotation (carConnector.js:134-135, 179-180). Both are hardening.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/store.js"
+        ],
+        "invariant": "Security-critical random values use a CSPRNG, and session state at rest is confined to the reader user",
+        "method": "source",
+        "result": "deviceid is md5(crypto.randomBytes(32)) (carConnector.js:116-124). Math.random is used only for retry jitter (backoff.js). MD5 of the password is the upstream protocol requirement, and the route guard pins the field to 32 hex characters, so the plain password is never sent. state.json (tokens, deviceid) is written atomically with mode 0600 in a 0700 dir, and an existing file is re-chmodded (store.js:12-21, 39-48). There is no secret comparison and so no timing side-channel. No crypto operation falls back to plaintext for GWM hosts (httpClient.js:42-49, 116).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/config.js",
+          "haval-h6-mqtt/carConnector.js"
+        ],
+        "invariant": "Credentials leave the process only toward GWM. Local check of the fixture-mode credential path",
+        "method": "local",
+        "result": "(D) loadConfig with GWM_LOGIN_URL=http://lookalike.invalid/login, GWM_API_BASE=http://lookalike.invalid/api, dummy secret files and no GWM_LIVE_ENABLED returned mode=fixture and liveAllowed=false (config.js:49). GwmClient.login then sent a body with keys [deviceid,password,account] over http: to lookalike.invalid, with the real-format account and the 32-hex MD5 password (carConnector.js:170-172). Only the owner sets these URLs: compose passes no GWM_LOGIN_URL from the shell (docker-compose.yml:33-43), and the IT overlay swaps every secret for throwaway files (test/integration/compose.it.yml:39-42). The internal network and the Squid allowlist bound the egress. No lower-trust principal controls this path, so it is recorded as hardening.",
+        "artifact": "agents/h3-secrets/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "Fixture-mode credential egress (config.js:49, carConnector.js:170-172; local check-1 D): any two non-gwmcloud URLs select fixture mode without GWM_LIVE_ENABLED. loadConfig still loads the real /run/secrets credentials, and login sends the account and the MD5 password over plain http if the URLs say so. The MD5 alone is enough to sign in. A mistyped or migrated GWM domain silently bypasses the live gate. Fix: require an explicit GWM_FIXTURE=true. In fixture mode, refuse to start when /run/secrets/gwm_* are the defaults, or require https. Regression test: liveGate with two non-gwmcloud URLs and no fixture flag returns run:false.",
+      "No single-flight login (carConnector.js:206-222; local check-1 A): the status and charge timers that call authed() together each log in, so one renewal uses 2 slots of the 3-per-hour cap. README says that two sign-ins sign each other out, so this can create self-inflicted auth failures toward the halt. Fix: memoize the in-flight login promise in GwmClient and reuse it, so that concurrent authed() calls perform exactly one login.",
+      "Store.load fails open (store.js:24-31; local check-1 B): when state.json is unreadable, the store starts empty and silently clears the persisted halt flag and the login-cap history. Fix: on a non-ENOENT read or parse error, exit with EX_CONFIG, or treat the cap as exhausted for one window and keep halted=true until the owner runs --reset-halt.",
+      "LoginLimiter.prune drops future-dated attempts (backoff.js:51; local check-1 C): a backward clock step resets the persisted cap. Fix: clamp entries with a > t to t, so they still count for the window.",
+      "MQTT_URL is not validated (config.js:174): mqtt://user:pass@host bypasses the file-only secret rule. The MQTT password is also never passed to registerSecret (index.js:65, config.js:133). Fix: parse MQTT_URL, refuse userinfo, and call registerSecret(config.mqttPassword) at startup.",
+      "unregisterSecret on token rotation (carConnector.js:134-135, 179-180) removes old tokens from the redactor. The secret Set has no reference count, so a collision with another registered value also unregisters that value. Opaque (non-JWT) old tokens would then log in clear. Fix: keep rotated tokens registered for the process lifetime.",
+      "first-run.sh report section 1 drops the Squid client address field (first-run.sh:39 prints $3,$5; squid.conf:26 puts %>a in $2). CONNECTs from any container on mqtt_internal (HA, others) look like reader attempts during the allowlist review. Fix: print $2 too, or filter on the gwm-reader container IP.",
+      "derive-dashboard.js denylist (derive-dashboard.js:20) does not cover toggle, url or fire-dom-event actions, or hass.callService inside custom:button-card [[[ ]]] templates. Fix: switch to an allowlist of action types (more-info, navigate, none), and reject templates that reference hass.call*.",
+      "test/integration/run.sh:83-88 interpolates netprobe JSON values into bash -c. This is safe today because the values are Node constants or integers. Fix: pass them as positional arguments (bash -c '...' _ \"$v\"), as run.sh:112 already does.",
+      "init-secrets.sh:32 makes gwm_username and gwm_password mode 0644. Their confidentiality on the host depends only on secrets/ staying 0700 (init-secrets.sh:12-14). Document this, or use a group-readable 0640 with the container gid."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FhttpClient.js%23TunnelAgent.createConnection::haval-h6-mqtt%2FhttpClient.js%23tlsOptions::haval-h6-mqtt::WEB-PROTOCOL-AND-AUTH.md%23mTLS%20peer%20and%20application-identity%20confusion",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/httpClient.js#TunnelAgent.createConnection",
+      "boundary": "haval-h6-mqtt/httpClient.js#tlsOptions",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "WEB-PROTOCOL-AND-AUTH.md#mTLS peer and application-identity confusion"
+    },
+    "surface": "HTTPS client, CONNECT tunnel, TLS and client certificate",
+    "boundary": "TLS server verification and optional mTLS",
+    "subsystem": "reader process",
+    "attack_class": "mTLS peer and application-identity confusion",
+    "starting_paths": [
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/config.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Cryptography and secrets",
+    "selected_companion_blocks": [
+      "WEB-PROTOCOL-AND-AUTH.md#Core discipline",
+      "WEB-PROTOCOL-AND-AUTH.md#mTLS peer and application-identity confusion",
+      "WEB-PROTOCOL-AND-AUTH.md#Certificate lifecycle fallback",
+      "WEB-PROTOCOL-AND-AUTH.md#API-key exposure and unsafe transport",
+      "WEB-PROTOCOL-AND-AUTH.md#Universal moves",
+      "WEB-PROTOCOL-AND-AUTH.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h1-egress",
+    "reviewed_paths": [
+      "docker-compose.override.yml.example",
+      "docs/RUNBOOK.md",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/test/unit/tls.test.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h1-egress",
+        "reviewed_paths": [
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/config.js",
+          "haval-h6-mqtt/index.js",
+          "docs/RUNBOOK.md",
+          "docker-compose.override.yml.example",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/test/unit/tls.test.js"
+        ],
+        "invariant": "Server TLS verification is always on (rejectUnauthorized true, minVersion TLSv1.2, system roots plus an additive CA only) and an absent, unreadable or half-configured client certificate fails closed instead of falling back to bearer-only operation.",
+        "method": "source",
+        "result": "httpClient.js:42-49 hard-codes rejectUnauthorized:true and minVersion TLSv1.2 and appends the optional CA to tls.rootCertificates; no env or config path can disable verification. config.js:96-101 and 146-152 throw ConfigError when a PEM file cannot be read or only one of GWM_CLIENT_CERT_FILE/GWM_CLIENT_KEY_FILE is set, so there is no silent mTLS fallback. index.js:56-63 passes the same tls object to both the direct agent and TunnelAgent (httpClient.js:94-95). The reader is only a TLS client; no code accepts or maps client-certificate identity or identity headers, so mTLS peer-identity confusion on a server side does not apply. Error messages carry only the Node error code (httpClient.js:169-174).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h1-egress",
+        "reviewed_paths": [
+          "haval-h6-mqtt/httpClient.js"
+        ],
+        "invariant": "TLS started inside the CONNECT tunnel verifies the chain and the requested host name exactly like a direct connection, and the client certificate is presented through the tunnel.",
+        "method": "local",
+        "result": "Loopback-only harness with a dummy PKI and a fake CONNECT proxy, through createHttpClient with proxyUrl: good cert with extra CA accepted; trusted CA but SAN other.test for host gwm.test rejected (ERR_TLS_CERT_ALTNAME_INVALID); untrusted CA rejected; no extra CA rejected (system roots only); clientAuth-only EKU rejected (INVALID_PURPOSE); IP-literal URL against a gwm.test cert rejected; proxy 403 surfaces as errorClass proxy; TLSv1.1-only server rejected; mTLS client CN 'client' seen by the server through the tunnel; SNI seen by the server equals the URL host. One differential: a caller-supplied Host header (other.test) changes the verified TLS name while the CONNECT target stays gwm.test, and the wrong-name server was accepted; no caller passes a Host header (carConnector.js:21-43, 197), so this is hardening only.",
+        "artifact": "agents/h1-egress/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "haval-h6-mqtt/httpClient.js:79: TunnelAgent verifies the TLS name from options.servername, which Node derives from the request Host header, while the CONNECT target uses options.host (httpClient.js:64). check-1 case 10 accepted a wrong-name server when a caller set Host: other.test. No caller sets Host today (carConnector.js:21-43, 197). Bind servername to options.host and reject a caller-supplied host header in request().",
+      "haval-h6-mqtt/httpClient.js:172: toGwmError does not classify OpenSSL verify codes such as INVALID_PURPOSE as 'tls' (check-1 case 5 reported errorClass network). The request still fails closed; widen the regex so the RUNBOOK TLS triage sees it.",
+      "haval-h6-mqtt/config.js:145 and haval-h6-mqtt/httpClient.js:46: GWM_EXTRA_CA_FILE is trusted for every host, including *.gwmcloud.com in live mode. A test CA left configured (test/integration/compose.it.yml:11 uses one) would let its key holder impersonate GWM. Accept the extra CA only in fixture mode, or log a startup warning with its fingerprint in live mode.",
+      "haval-h6-mqtt/config.js:49: the live gate is a host-name suffix test. With both URLs set to IP literals or a non-gwmcloud alias, fixture mode sends the real credentials from the secret files without GWM_LIVE_ENABLED (check-2 G8). Only the owner sets these variables; consider an explicit GWM_FIXTURE=true plus refusal of non-test credentials in fixture mode.",
+      "haval-h6-mqtt/routes.js:123-130 and haval-h6-mqtt/httpClient.js:121: the guard checks the body object's own enumerable fields, but JSON.stringify honors toJSON, so the guarded and sent bodies can differ (check-2 case o). Bodies are code-built today; serialize first and guard JSON.parse(payload).",
+      "haval-h6-mqtt/httpClient.js:96 and 139: plain http: requests to non-gwmcloud hosts use a direct http.Agent and bypass HTTPS_PROXY. In the shipped compose this reaches only mqtt_internal peers (docker-compose.yml:48, 110-111); consider refusing http: unless the host is a loopback or explicitly named mock.",
+      "proxy/squid.conf:14-18: there is no destination deny for RFC1918, loopback or link-local addresses. A GWM-controlled DNS answer for an allowlisted name could point a tunnel at an internal host. The reader's TLS name check (check-1 case 2) prevents disclosure, but 'acl to_private dst 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8 169.254.0.0/16 ::1 fc00::/7 fe80::/10' with 'http_access deny to_private' would close it at the proxy too."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2FhttpClient.js%23request::haval-h6-mqtt%2Froutes.js%23check::haval-h6-mqtt::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/httpClient.js#request",
+      "boundary": "haval-h6-mqtt/routes.js#check",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "Outbound HTTP request construction",
+    "boundary": "Route allowlist and gwmcloud live gate",
+    "subsystem": "reader process",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "haval-h6-mqtt/routes.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/carConnector.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "WEB-PROTOCOL-AND-AUTH.md#Core discipline",
+      "WEB-PROTOCOL-AND-AUTH.md#Universal moves",
+      "WEB-PROTOCOL-AND-AUTH.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h1-egress",
+    "reviewed_paths": [
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/routes.js",
+      "haval-h6-mqtt/test/unit/httpClient.test.js",
+      "haval-h6-mqtt/test/unit/routes.test.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h1-egress",
+        "reviewed_paths": [
+          "haval-h6-mqtt/routes.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/config.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/index.js",
+          "haval-h6-mqtt/test/unit/routes.test.js",
+          "haval-h6-mqtt/test/unit/httpClient.test.js"
+        ],
+        "invariant": "Every outbound request passes the exact route allowlist (method, origin, path, query keys/values, body fields) on the same URL object that is sent, and a *.gwmcloud.com host is refused unless GWM_LIVE_ENABLED is exactly 'true'; GWM-derived values cannot widen a route.",
+        "method": "source",
+        "result": "httpClient.js:99-116 runs guard.check on the URL object, then the gwmcloud live gate, then the protocol checks, and passes the same object to http(s).request at 137-139; redirects are not followed. routes.js:103-132 matches method, u.origin and exact u.pathname per route, rejects credentials/fragments, repeated query keys, extra or missing keys, and non-string or non-matching values. The only GWM-derived request input is the VIN, pinned by /^[A-Z0-9]{17}$/ (routes.js:42, 54) after carConnector.js:254/266 uppercase it; tokens go only to header values, which Node rejects on CR/LF. The guard is bound to the same loginUrl/apiBase as GwmClient (index.js:57, 64). liveGate (config.js:46-52) runs fixture mode only when both URLs are overridden and neither is gwmcloud; otherwise it needs GWM_LIVE_ENABLED === 'true'. Destination selection is owner-only (env); no lower-trust principal reaches it.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h1-egress",
+        "reviewed_paths": [
+          "haval-h6-mqtt/routes.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/config.js"
+        ],
+        "invariant": "Route guard, isGwmCloudHost and liveGate agree under URL normalization variants, and the path on the wire equals the guarded path.",
+        "method": "local",
+        "result": "Uppercase host, explicit :443, dot and %2e%2e segments normalize to the allowed route and the wire path equals the normalized guarded path; trailing-dot host, %2F, other port, http scheme, other gwmcloud host, duplicate or injected vin, lowercase vin, extra query, credentials in URL, sendCmd and an own __proto__ body key are blocked. isGwmCloudHost is true for trailing dots, uppercase, U+3002 and %2E host forms; liveGate stays disabled for 'TRUE', a single override, and trailing-dot or U+3002 gwmcloud overrides; transport refuses gwmcloud variants with live_disabled and non-http(s) with config. Fixture mode runs for two IP-literal URLs without GWM_LIVE_ENABLED (owner-controlled, by design). A body with an inherited toJSON passes the guard on its own fields but serializes to different JSON (code-built bodies only; hardening).",
+        "artifact": "agents/h1-egress/artifacts/check-2.txt"
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "haval-h6-mqtt/httpClient.js:79: TunnelAgent verifies the TLS name from options.servername, which Node derives from the request Host header, while the CONNECT target uses options.host (httpClient.js:64). check-1 case 10 accepted a wrong-name server when a caller set Host: other.test. No caller sets Host today (carConnector.js:21-43, 197). Bind servername to options.host and reject a caller-supplied host header in request().",
+      "haval-h6-mqtt/httpClient.js:172: toGwmError does not classify OpenSSL verify codes such as INVALID_PURPOSE as 'tls' (check-1 case 5 reported errorClass network). The request still fails closed; widen the regex so the RUNBOOK TLS triage sees it.",
+      "haval-h6-mqtt/config.js:145 and haval-h6-mqtt/httpClient.js:46: GWM_EXTRA_CA_FILE is trusted for every host, including *.gwmcloud.com in live mode. A test CA left configured (test/integration/compose.it.yml:11 uses one) would let its key holder impersonate GWM. Accept the extra CA only in fixture mode, or log a startup warning with its fingerprint in live mode.",
+      "haval-h6-mqtt/config.js:49: the live gate is a host-name suffix test. With both URLs set to IP literals or a non-gwmcloud alias, fixture mode sends the real credentials from the secret files without GWM_LIVE_ENABLED (check-2 G8). Only the owner sets these variables; consider an explicit GWM_FIXTURE=true plus refusal of non-test credentials in fixture mode.",
+      "haval-h6-mqtt/routes.js:123-130 and haval-h6-mqtt/httpClient.js:121: the guard checks the body object's own enumerable fields, but JSON.stringify honors toJSON, so the guarded and sent bodies can differ (check-2 case o). Bodies are code-built today; serialize first and guard JSON.parse(payload).",
+      "haval-h6-mqtt/httpClient.js:96 and 139: plain http: requests to non-gwmcloud hosts use a direct http.Agent and bypass HTTPS_PROXY. In the shipped compose this reaches only mqtt_internal peers (docker-compose.yml:48, 110-111); consider refusing http: unless the host is a loopback or explicitly named mock.",
+      "proxy/squid.conf:14-18: there is no destination deny for RFC1918, loopback or link-local addresses. A GWM-controlled DNS answer for an allowlisted name could point a tunnel at an internal host. The reader's TLS name check (check-1 case 2) prevents disclosure, but 'acl to_private dst 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8 169.254.0.0/16 ::1 fc00::/7 fe80::/10' with 'http_access deny to_private' would close it at the proxy too."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2Freader.js%23Reader.publishStatus::ha%2Frecorder.yaml%23recorder.exclude::haval-h6-mqtt::DATA-ISOLATION-AND-LIFECYCLE.md%23Retention%20and%20queued-work%20overrun",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/reader.js#Reader.publishStatus",
+      "boundary": "ha/recorder.yaml#recorder.exclude",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "DATA-ISOLATION-AND-LIFECYCLE.md#Retention and queued-work overrun"
+    },
+    "surface": "Retained MQTT states and HA recorder",
+    "boundary": "Retention of coordinates and occupancy-revealing states",
+    "subsystem": "reader process and HA",
+    "attack_class": "Retention and queued-work overrun",
+    "starting_paths": [
+      "ha/recorder.yaml",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/map.js",
+      "mosquitto/mosquitto.conf",
+      "docker-compose.yml",
+      "README.md"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+      "DATA-ISOLATION-AND-LIFECYCLE.md#Retention and queued-work overrun",
+      "DATA-ISOLATION-AND-LIFECYCLE.md#Analytics, logs, traces, and diagnostics as alternate readers",
+      "DATA-ISOLATION-AND-LIFECYCLE.md#Universal moves",
+      "DATA-ISOLATION-AND-LIFECYCLE.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 2,
+    "status": "covered",
+    "agent_id": "h5-data",
+    "reviewed_paths": [
+      "README.md",
+      "docker-compose.yml",
+      "ha/recorder.yaml",
+      "haval-h6-mqtt/carTextUtil.js",
+      "haval-h6-mqtt/map.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/test/unit/reader.test.js",
+      "mosquitto/mosquitto.conf"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h5-data",
+        "reviewed_paths": [
+          "ha/recorder.yaml",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/map.js",
+          "README.md"
+        ],
+        "invariant": "Every Home Assistant entity that carries lock, door, window, sunroof, coordinates or the door/window text summary (the stated scope in ha/recorder.yaml:2-4 and README.md recorder note) has a generated default_entity_id that matches a recorder.exclude glob.",
+        "method": "local",
+        "result": "The sandboxed harness built discoveryMessages({vehicleId:'h6', trackerEnabled:true}) and matched each default_entity_id (mqtt.js:77-78,97-100) against the six globs with fnmatch semantics. All 13 in-scope entities are excluded: binary_sensor.gwmbrasil_h6_estado_da_trava, the five porta_* binary sensors (porta_malas included, because entitySlug turns the first '-' into '_'), the four vidro_* sensors, sensor.gwmbrasil_h6_posicao_do_teto_solar (NFD strips the accents), sensor.gwmbrasil_h6_status_message, and device_tracker.gwmbrasil_h6_location. The other 36 entities are recorded; none of them is in the stated scope.",
+        "artifact": "agents/h5-data/artifacts/check-1.txt"
+      },
+      {
+        "agent_id": "h5-data",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/carTextUtil.js",
+          "haval-h6-mqtt/test/unit/reader.test.js"
+        ],
+        "invariant": "Coordinates leave the process only on the non-retained location attributes topic and only when DEVICE_TRACKER_ENABLED is true; no retained topic or derived text carries coordinates.",
+        "method": "source",
+        "result": "reader.js:231-237 reads status.latitude/longitude only inside the deviceTrackerEnabled branch and publishes them with retain:false to the location attributes topic, whose only HA reader is the excluded device_tracker entity (mqtt.js:96-101). The status_message text (carTextUtil.js:41-81 via reader.js:227-228) lists only open windows, doors, sunroof and trunk and is itself excluded. The snapshot (reader.js:214-215) is retain:false and carries no coordinates. reader.test.js:69-86 asserts this for both tracker settings.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h5-data",
+        "reviewed_paths": [
+          "mosquitto/mosquitto.conf",
+          "docker-compose.yml",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/reader.js"
+        ],
+        "invariant": "Broker persistence does not keep a history of the excluded states or of coordinates beyond the current retained value.",
+        "method": "source",
+        "result": "mosquitto.conf:10-12 enables persistence to the mqtt-data volume (docker-compose.yml:88,106). A retained topic keeps only its last value; lock/door/window states are retained current state (reader.js:220) that the authorized homeassistant user reads anyway (mosquitto/acl). Coordinates and the snapshot are published retain:false (reader.js:215,235), so no retained copy exists. QoS 1 queues for offline persistent-session subscribers are bounded broker defaults and hold only messages those ACL-authorized users can read. No unauthorized reader or retention promise is broken.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "origin": "critic-1 missing_units",
+    "hardening_notes": [
+      "haval-h6-mqtt/snapshot.js:43-45 forwards every GWM item code and value unchanged; the 'no identifier, no coordinates' promise holds only because the GWM API puts the VIN and coordinates in top-level fields. Restrict items to the codes in map.js sensorTopics/attributeTopics (or a documented snapshot allowlist) and scrub registered VIN fragments from item values, with a reader.test.js case that injects an unmapped item carrying a dummy VIN and a coordinate pair.",
+      "ha/recorder.yaml:9-15 matches entity ids that exist only because discovery sets default_entity_id (mqtt.js:78,100). A Home Assistant release that ignores default_entity_id, or an owner rename in the entity registry, gives ids such as binary_sensor.gwm_haval_h6_estado_da_trava that the gwmbrasil_* globs miss, and the lock/door/window states are then recorded. Add a unit test that asserts each in-scope discovery id matches a recorder glob, and document the minimum HA version or add version-independent globs (for example *_estado_da_trava, *_porta_*).",
+      "Occupancy-revealing entities outside the stated exclude scope are recorded: sensor.gwmbrasil_<id>_estado_do_motor, the air conditioner, seat, steering and cabin heater binary sensors, sensor.gwmbrasil_<id>_temperatura_da_cabine, the charge plug state, and sensor.gwmbrasil_<id>_historico_de_carregamento whose attributes hold up to 100 charge start/end times (reader.js:245-247). Sensors with state_class (odometer total, cabin temperature) also get HA long-term statistics, which purge_keep_days: 7 does not remove. Owner-only readers, so this is a retention choice, not a finding.",
+      "When DEVICE_TRACKER_ENABLED changes from true to false, discoveryMessages (mqtt.js:96-102) stops publishing the device_tracker config but never sends an empty retained payload, so the retained discovery config stays in the persisted broker store and the HA entity is not removed. No coordinates are retained (reader.js:235 uses retain:false), but a tombstone publish would make the opt-out complete.",
+      "The snapshot that kinestra_bridge receives carries the lock, door, window and sunroof item codes and hy_eng_sts (snapshot.js:41-45), the same data classes that ha/recorder.yaml keeps out of the HA database because they reveal when the car is parked or unattended. kinestra_bridge is authorized for the snapshot, so this is not a boundary failure, but the downstream retention of those codes is not governed by this repository."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2Freader.js%23Reader.publishStatus::haval-h6-mqtt%2Fmqtt.js%23createPublisher.publish::haval-h6-mqtt::RESOURCE-EXHAUSTION-AND-AVAILABILITY.md%23Unbounded%20buffering%20and%20cardinality",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/reader.js#Reader.publishStatus",
+      "boundary": "haval-h6-mqtt/mqtt.js#createPublisher.publish",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality"
+    },
+    "surface": "GWM status items republished per item",
+    "boundary": "Per-item retained QoS1 publish fan-out to the shared broker",
+    "subsystem": "reader process",
+    "attack_class": "Unbounded buffering and cardinality",
+    "starting_paths": [
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/map.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/httpClient.js",
+      "mosquitto/mosquitto.conf",
+      "docker-compose.yml"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Core discipline",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Universal moves",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 3,
+    "status": "covered",
+    "agent_id": "h7-fanout",
+    "reviewed_paths": [
+      "docker-compose.yml",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/carTextUtil.js",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/map.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js",
+      "mosquitto/mosquitto.conf"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h7-fanout",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/map.js",
+          "haval-h6-mqtt/mqtt.js"
+        ],
+        "invariant": "Per-item state/attribute fan-out maps to a bounded, closed set of retained topics regardless of the GWM response contents.",
+        "method": "source",
+        "result": "reader.js:218-226 publishes a per-item state topic only when Object.prototype.hasOwnProperty.call(sensorTopics, code) (219) and routes attributes only for attributeTopics (222); both are closed object literals in map.js (~40 and ~14 fixed numeric-string keys). The topic key is the matched code, so the distinct retained state-topic set is bounded by map.js. mqtt.js topics() (43-53) derives every topic from PREFIX/vehicleId (vehicleId validated against ^[a-z0-9][a-z0-9_]{0,31}$ at mqtt.js:111) plus the key; hyengsts/status_message are fixed literal keys (225,228). No untrusted path creates an arbitrary topic, and special names such as __proto__ are not own-properties of the literals, so there is no topic-cardinality explosion.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h7-fanout",
+        "reviewed_paths": [
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/carConnector.js"
+        ],
+        "invariant": "The GWM response feeding publishStatus is bounded in total size, so both the per-cycle publish count and each payload size are bounded (aggregate limit present).",
+        "method": "source",
+        "result": "httpClient.js:21 sets MAX_BODY_BYTES = 4 MiB and enforces it while streaming (143-150: req.destroy on overflow before buffering more). carConnector.getLastStatus (249-258) returns body.data via requireData with no dedup and no item-count limit, so status.items passes through un-truncated. The only aggregate bound on item count and on total value bytes is therefore the 4 MiB HTTP cap: the sum of every value published per status cycle is <= ~4 MiB, and the per-message payload String(convertValue(...)) (220) is likewise <= ~4 MiB. Per-object and aggregate caps both exist.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h7-fanout",
+        "reviewed_paths": [
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/mqtt.js"
+        ],
+        "invariant": "The fan-out does not accumulate unbounded in-process queued or in-flight publishes.",
+        "method": "source",
+        "result": "reader.js:215-237 awaits every publisher.publish sequentially; mqtt.js publish() (138-151) resolves only on the QoS1 client.publish puback callback, so at most one publish is in flight. A slow or stalled broker blocks the poll loop (backpressure) instead of queueing unbounded messages in process memory. Duplicate matching codes produce only linear, transient re-publishes that overwrite the same retained topic, driven once per REFRESH_TIME (docker-compose.yml:36, 300s); self-limiting work, not persistent cardinality or buffering.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h7-fanout",
+        "reviewed_paths": [
+          "haval-h6-mqtt/carTextUtil.js",
+          "haval-h6-mqtt/snapshot.js"
+        ],
+        "invariant": "Payloads derived from the status (status_message, snapshot) stay O(input) and do not expand size or cardinality.",
+        "method": "source",
+        "result": "carTextUtil.getVehicleStatusHardAnalysis (carTextUtil.js:41-137) pushes from a fixed set of ~20 checks and returns a newline-joined statusMessage array; interpolated values come from statusBySlug keyed by closed map.js descriptions (reader.js:37-47), so the retained status_message (reader.js:228) is bounded by the 4 MiB input with no repetition or expansion. snapshot.js buildSnapshot (31-49) maps items 1:1 to {code,value,unit} with no per-item enrichment and is published retain:false (reader.js:215); its size is bounded by the same 4 MiB input.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h7-fanout",
+        "reviewed_paths": [
+          "mosquitto/mosquitto.conf",
+          "docker-compose.yml"
+        ],
+        "invariant": "A second-line broker-side cap (message size / queued bytes / memory) bounds retained publishes to the shared broker.",
+        "method": "source",
+        "result": "mosquitto/mosquitto.conf (1-19) sets no message_size_limit, no max_queued_messages/max_queued_bytes, and no memory_limit; docker-compose.yml:95-97 caps the broker container at 64m memory. The only effective bound on published payloads is the reader-side 4 MiB HTTP cap. The broker listener and buffering surface is a peer-owned coverage unit (mosquitto.conf#listener 1883 in the excluded peer list), so broker-side cap absence is defense-in-depth hardening and not a candidate for this unit.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "origin": "uncovered from h6-avail",
+    "hardening_notes": [
+      "reader.js:218-223 does not dedupe status.items by code before the publish loop; a single GWM response within the 4 MiB cap can carry many duplicate matching codes, producing a large number of serialized retained re-publishes to the same topic per cycle. It is bounded and self-limiting, but deduping by code before the loop removes the amplification.",
+      "mqtt.js publish() (138-151) has no per-publish timeout; a connected-but-unresponsive broker leaves the awaited QoS1 callback pending and stalls the poll loop indefinitely. This is reader-own availability (not the shared broker), but a publish deadline would bound it.",
+      "mosquitto/mosquitto.conf sets no message_size_limit, max_queued_bytes, or memory_limit; the defense rests entirely on the reader's 4 MiB HTTP body cap (httpClient.js:21). Adding broker-side caps gives defense-in-depth if that cap is ever raised (the broker listener unit is peer-owned)."
+    ]
+  },
+  {
+    "coverage_id": "haval-h6-mqtt%2Fsnapshot.js%23buildSnapshot::mosquitto%2Facl%23user%20kinestra_bridge::haval-h6-mqtt::ATTACK-CLASSES.md%23Feature%20abuse%20and%20data%20leakage",
+    "canonical_refs": {
+      "surface": "haval-h6-mqtt/snapshot.js#buildSnapshot",
+      "boundary": "mosquitto/acl#user kinestra_bridge",
+      "subsystem": "haval-h6-mqtt",
+      "attack_class": "ATTACK-CLASSES.md#Feature abuse and data leakage"
+    },
+    "surface": "Raw status snapshot built from GWM items",
+    "boundary": "Identifier and coordinate confinement toward the kinestra_bridge consumer",
+    "subsystem": "reader process",
+    "attack_class": "Feature abuse and data leakage",
+    "starting_paths": [
+      "haval-h6-mqtt/snapshot.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/map.js",
+      "mosquitto/acl"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Feature abuse and data leakage",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 2,
+    "status": "covered",
+    "agent_id": "h5-data",
+    "reviewed_paths": [
+      "README.md",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/map.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js",
+      "haval-h6-mqtt/test/unit/reader.test.js",
+      "mosquitto/acl",
+      "test/integration/mock-gwm.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h5-data",
+        "reviewed_paths": [
+          "haval-h6-mqtt/snapshot.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/carConnector.js",
+          "haval-h6-mqtt/map.js",
+          "haval-h6-mqtt/test/unit/reader.test.js",
+          "test/integration/mock-gwm.js"
+        ],
+        "invariant": "The snapshot delivered to kinestra_bridge carries no VIN, IMSI, ICCID, engine number or coordinates (snapshot.js:3-6, README.md MQTT topics table).",
+        "method": "local",
+        "result": "buildSnapshot (snapshot.js:31-49) copies only an allowlist of top-level fields: schema, device (owner VEHICLE_ID, regex-checked at mqtt.js:24,111), collected_at, three timestamps, hy_eng_sts, vehicle.model and tank_capacity_l, and items as {code,value,unit}. It never reads status.vin, latitude or longitude, and reader.js:214 passes this.vehicle, whose fields are vin/model/color/engineType/tankCapacityL, but buildSnapshot reads only model and tankCapacityL. vehicleModel (carConnector.js:69-74) is built from appShowSeriesName and powerType only. The sandboxed harness built a snapshot from a status with latitude/longitude and a vehicle with a dummy VIN; the output has no VIN and no coordinates, and it shows that unmapped item codes pass through unchanged.",
+        "artifact": "agents/h5-data/artifacts/check-1.txt"
+      },
+      {
+        "agent_id": "h5-data",
+        "reviewed_paths": [
+          "mosquitto/acl",
+          "haval-h6-mqtt/mqtt.js",
+          "README.md"
+        ],
+        "invariant": "kinestra_bridge receives only the snapshot topic and no state, attribute, location or discovery topic.",
+        "method": "source",
+        "result": "mosquitto/acl:13-14 grants kinestra_bridge only read gwmbrasil/+/snapshot. The reader's other topics are four levels deep (gwmbrasil/<id>/<key>/state|attributes, mqtt.js:49-50) or under homeassistant/ (mqtt.js:51), and VEHICLE_ID cannot contain '/' (mqtt.js:24), so no other reader topic matches the single-level '+' pattern. Delivery-time ACL enforcement for SUBSCRIBE is owned by the peer topic-scope unit.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "origin": "uncovered from h2-gwmresp and h3-secrets",
+    "hardening_notes": [
+      "haval-h6-mqtt/snapshot.js:43-45 forwards every GWM item code and value unchanged; the 'no identifier, no coordinates' promise holds only because the GWM API puts the VIN and coordinates in top-level fields. Restrict items to the codes in map.js sensorTopics/attributeTopics (or a documented snapshot allowlist) and scrub registered VIN fragments from item values, with a reader.test.js case that injects an unmapped item carrying a dummy VIN and a coordinate pair.",
+      "ha/recorder.yaml:9-15 matches entity ids that exist only because discovery sets default_entity_id (mqtt.js:78,100). A Home Assistant release that ignores default_entity_id, or an owner rename in the entity registry, gives ids such as binary_sensor.gwm_haval_h6_estado_da_trava that the gwmbrasil_* globs miss, and the lock/door/window states are then recorded. Add a unit test that asserts each in-scope discovery id matches a recorder glob, and document the minimum HA version or add version-independent globs (for example *_estado_da_trava, *_porta_*).",
+      "Occupancy-revealing entities outside the stated exclude scope are recorded: sensor.gwmbrasil_<id>_estado_do_motor, the air conditioner, seat, steering and cabin heater binary sensors, sensor.gwmbrasil_<id>_temperatura_da_cabine, the charge plug state, and sensor.gwmbrasil_<id>_historico_de_carregamento whose attributes hold up to 100 charge start/end times (reader.js:245-247). Sensors with state_class (odometer total, cabin temperature) also get HA long-term statistics, which purge_keep_days: 7 does not remove. Owner-only readers, so this is a retention choice, not a finding.",
+      "When DEVICE_TRACKER_ENABLED changes from true to false, discoveryMessages (mqtt.js:96-102) stops publishing the device_tracker config but never sends an empty retained payload, so the retained discovery config stays in the persisted broker store and the HA entity is not removed. No coordinates are retained (reader.js:235 uses retain:false), but a tombstone publish would make the opt-out complete.",
+      "The snapshot that kinestra_bridge receives carries the lock, door, window and sunroof item codes and hy_eng_sts (snapshot.js:41-45), the same data classes that ha/recorder.yaml keeps out of the HA database because they reveal when the car is parked or unattended. kinestra_bridge is authorized for the snapshot, so this is not a boundary failure, but the downstream retention of those codes is not governed by this repository."
+    ]
+  },
+  {
+    "coverage_id": "main%3Arepository.json%23add-on%20repository::README.md%23Update%20from%20upstream%20%28keep%20the%20route%20allowlist%29::fork%20default%20branch::SUPPLY-CHAIN-AND-RELEASE.md%23Plugin%20and%20extension%20trust%20expansion",
+    "canonical_refs": {
+      "surface": "main:repository.json#add-on repository",
+      "boundary": "README.md#Update from upstream (keep the route allowlist)",
+      "subsystem": "fork default branch",
+      "attack_class": "SUPPLY-CHAIN-AND-RELEASE.md#Plugin and extension trust expansion"
+    },
+    "surface": "HA add-on repository packaging on the default branch main",
+    "boundary": "Hardened Compose-only distribution versus the upstream add-on install and update channel",
+    "subsystem": "ci and fork lifecycle",
+    "attack_class": "Plugin and extension trust expansion",
+    "starting_paths": [
+      "README.md",
+      "docs/AUDIT.md",
+      "Dockerfile",
+      ".dockerignore",
+      ".github/workflows/ci.yml"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "SUPPLY-CHAIN-AND-RELEASE.md#Core discipline",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Plugin and extension trust expansion",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Build-to-promotion substitution",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Release authorization and signing-policy gaps",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Universal moves",
+      "SUPPLY-CHAIN-AND-RELEASE.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 4,
+    "status": "candidate",
+    "agent_id": "h9-addon",
+    "reviewed_paths": [
+      ".dockerignore",
+      ".github/workflows/ci.yml",
+      ".github/workflows/docker-build-publish.yml",
+      "Dockerfile",
+      "README.md",
+      "docker-compose.yml",
+      "docs/AUDIT.md",
+      "haval-h6-mqtt/Dockerfile",
+      "haval-h6-mqtt/build.yaml",
+      "haval-h6-mqtt/carConnector.js",
+      "haval-h6-mqtt/config.json",
+      "haval-h6-mqtt/test/unit/readonly.test.js",
+      "repository.json"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h9-addon",
+        "reviewed_paths": [
+          "repository.json",
+          "haval-h6-mqtt/config.json",
+          "haval-h6-mqtt/carConnector.js"
+        ],
+        "invariant": "The fork's public default branch must not serve an HA add-on install/update channel that delivers code the fork claims to have removed, and any add-on identity it serves must not substitute or expand a publisher's authority.",
+        "method": "source",
+        "result": "The channel exists. git rev-parse shows main == origin/main == upstream/main == bafa10e, and refs/remotes/origin/HEAD -> origin/main (default branch as of the local clone). main:repository.json:1-5 is a valid HA add-on repository manifest, and main:haval-h6-mqtt/config.json:1-36 is an add-on manifest with gwm_pin (line 28), device_tracker_enabled true (line 21), refresh_time 30 (line 19), and no 'image' key. Without 'image', the HA Supervisor builds the add-on locally from the cloned repository (hosted-tool default asserted from HA documentation knowledge, not source), so this channel does not depend on GitHub Actions or a registry and is not closed by the 'Actions disabled' fact. The add-on it builds is upstream's unhardened code: main:haval-h6-mqtt/carConnector.js:151-152 loads the committed certs/gwm_general.key, :164-165 set rejectUnauthorized:false and SECLEVEL=0, and sendCmd (:205) is present. Root cause is the same as the peer candidate upstream-sync/.github/workflows:fork-token-publish-authority: the fork default branch mirrors unhardened upstream (HEAD..main is empty; every add-on file is byte-identical upstream content). The add-on channel is a second vector of that root cause, so the fingerprint is linked and no new candidate is raised. It is not a distinct trust-expansion result: repository.json:2-4 and config.json:14 name the real upstream author (havaleiros), no lower-trust actor replaces a publisher identity, the installed software equals upstream's own add-on (the comparable baseline), and the parent's deployment facts say the owner has not installed the fork as an add-on repository. Intended installation of a same-user add-on is not a privilege boundary.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h9-addon",
+        "reviewed_paths": [
+          "haval-h6-mqtt/build.yaml",
+          "haval-h6-mqtt/Dockerfile",
+          "docs/AUDIT.md"
+        ],
+        "invariant": "Build-to-promotion substitution: the add-on build on main must bind to immutable inputs.",
+        "method": "source",
+        "result": "main:haval-h6-mqtt/build.yaml:2-6 uses ghcr.io/home-assistant/*-base:latest, main:haval-h6-mqtt/Dockerfile:10 does COPY . /app (this includes certs/gwm_general.key in the add-on image), and :12 runs npm install --omit=dev without --ignore-scripts. These are mutable inputs resolved on the installing user's Supervisor host, but they are upstream baseline already recorded in docs/AUDIT.md:175-176 (':latest' bases) and docs/AUDIT.md:165-167 (committed key). They add no fork-specific handoff and no new consumer beyond upstream's own add-on users. Not a distinct finding.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h9-addon",
+        "reviewed_paths": [
+          "README.md",
+          "haval-h6-mqtt/test/unit/readonly.test.js",
+          ".dockerignore"
+        ],
+        "invariant": "The hardened branch update procedure must keep add-on packaging out of hardened after an upstream merge, and packaging must not reach the hardened image.",
+        "method": "source",
+        "result": "README.md:165-167 states that main mirrors upstream/main and that fork work lives on hardened. README.md:176-177 tells the owner to delete config.json, build.yaml, run.sh, repository.json, translations/ and certs/ again by hand after a merge. README.md:32 claims 'HA add-on packaging: Removed. Docker Compose only' for hardened, but README.md:193-198 warns only about docker-build-publish.yml on main, not about the add-on channel on main. No test enforces the deletion: haval-h6-mqtt/test/unit/readonly.test.js:11-12 scans only top-level haval-h6-mqtt/*.js files. A merge that restores those files to hardened fails no test. The positive control holds: .dockerignore:2-5 is an allowlist (package.json, package-lock.json, *.js only), so restored certs/ or manifests never enter the hardened image. The gap is a missing regression guard with no affected principal (the owner does not install add-ons), so it is recorded as hardening.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h9-addon",
+        "reviewed_paths": [
+          "Dockerfile",
+          ".github/workflows/ci.yml"
+        ],
+        "invariant": "The hardened distribution channel is Compose-only and publishes no add-on manifest or image.",
+        "method": "source",
+        "result": "Dockerfile:5 and :15 pin the node:24 alpine builder and the distroless nodejs24 runtime by digest, :8 runs npm ci --ignore-scripts, :22 runs as 65532. .github/workflows/ci.yml:6-10 triggers on push to hardened, pull_request and workflow_dispatch; :12-13 set contents: read; :64-65 build the image with no push. No job in ci.yml publishes an image, a release, or an add-on manifest. The hardened branch has no repository.json, config.json, build.yaml or run.sh (git ls-files). The Compose-only claim holds for hardened.",
+        "artifact": null
+      },
+      {
+        "agent_id": "v5-upstreamsync",
+        "reviewed_paths": [
+          ".github/workflows/ci.yml",
+          ".github/workflows/docker-build-publish.yml",
+          "README.md",
+          "docker-compose.yml",
+          "docs/AUDIT.md",
+          "haval-h6-mqtt/test/unit/readonly.test.js"
+        ],
+        "invariant": "Phase 3 independent candidate validation of upstream-sync/.github/workflows:fork-token-publish-authority",
+        "method": "local",
+        "result": "decision: needs_validation",
+        "artifact": "agents/v5-upstreamsync/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "upstream-sync/.github/workflows:fork-token-publish-authority"
+    ],
+    "unresolved": [],
+    "origin": "critic-3 missing_units",
+    "hardening_notes": [
+      "Add a non-.js packaging guard test (for example in haval-h6-mqtt/test/unit/readonly.test.js) that fails when repository.json, haval-h6-mqtt/config.json, haval-h6-mqtt/build.yaml, haval-h6-mqtt/run.sh, haval-h6-mqtt/translations/ or haval-h6-mqtt/certs/ exist on the branch, so the manual deletion step in README.md:176-177 is enforced after each upstream merge.",
+      "Close the add-on channel on the public fork: set the fork default branch to hardened, or keep the upstream mirror on a non-default branch and make main a stub without repository.json. Then a user who adds the fork URL to the HA add-on store gets no installable unhardened add-on under the fork's URL.",
+      "Extend README.md:193-198 to state that main also serves upstream's HA add-on repository (main:repository.json, main:haval-h6-mqtt/config.json), which the HA Supervisor builds locally without GitHub Actions, so 'Actions disabled' does not close it."
+    ],
+    "validation_decision": "needs_validation"
+  },
+  {
+    "coverage_id": "mosquitto%2Facl%23user%20gwm_reader::mosquitto%2Fmosquitto.conf%23acl_file::mosquitto::PROTOCOLS-RPC-AND-MESSAGING.md%23Topic%2C%20routing-key%2C%20and%20subscription%20scope%20gaps",
+    "canonical_refs": {
+      "surface": "mosquitto/acl#user gwm_reader",
+      "boundary": "mosquitto/mosquitto.conf#acl_file",
+      "subsystem": "mosquitto",
+      "attack_class": "PROTOCOLS-RPC-AND-MESSAGING.md#Topic, routing-key, and subscription scope gaps"
+    },
+    "surface": "MQTT broker topics",
+    "boundary": "Broker authentication and ACL",
+    "subsystem": "broker",
+    "attack_class": "Topic, routing-key, and subscription scope gaps",
+    "starting_paths": [
+      "mosquitto/acl",
+      "mosquitto/mosquitto.conf",
+      "haval-h6-mqtt/mqtt.js",
+      "docker-compose.yml",
+      "test/integration/acl.test.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [
+      "PROTOCOLS-RPC-AND-MESSAGING.md#Core discipline",
+      "PROTOCOLS-RPC-AND-MESSAGING.md#Topic, routing-key, and subscription scope gaps",
+      "PROTOCOLS-RPC-AND-MESSAGING.md#Untrusted producer treated as control plane",
+      "PROTOCOLS-RPC-AND-MESSAGING.md#Universal moves",
+      "PROTOCOLS-RPC-AND-MESSAGING.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "h4-platform",
+    "reviewed_paths": [
+      "README.md",
+      "docker-compose.yml",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/reader.js",
+      "haval-h6-mqtt/snapshot.js",
+      "mosquitto/acl",
+      "mosquitto/mosquitto.conf",
+      "scripts/init-secrets.sh",
+      "test/integration/acl.test.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "mosquitto/acl",
+          "mosquitto/mosquitto.conf",
+          "scripts/init-secrets.sh",
+          "test/integration/acl.test.js",
+          "docker-compose.yml",
+          "README.md"
+        ],
+        "invariant": "Topic ACLs give each MQTT user only its documented read or write scope, with no anonymous access and no unlisted user.",
+        "method": "source",
+        "result": "allow_anonymous false, password_file and acl_file are set (mosquitto/mosquitto.conf:6-8). The ACL has no global or pattern rule; gwm_reader has write gwmbrasil/# and homeassistant/+/gwmbrasil/# only, homeassistant has read gwmbrasil/# and homeassistant/# only, kinestra_bridge has read gwmbrasil/+/snapshot only (mosquitto/acl:3-14). init-secrets.sh creates exactly these three users in the password file (scripts/init-secrets.sh:17,40-41). acl.test.js exercises anonymous refusal, delivery filtering for gwm_reader, publish denial for homeassistant and kinestra_bridge, and snapshot-only delivery to kinestra_bridge (test/integration/acl.test.js:19,30,54,73,85). No pattern ACL exists, so the client-id/username wildcard class does not apply. The topic table does not cover the client identifier, which is a separate broker authority (see candidate). Mosquitto mounts mosquitto.conf, acl and the hashed passwd read-only with no host port (docker-compose.yml:84-89), and README.md:147-148,161-162 make homeassistant and kinestra_bridge authenticated peers of this broker.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/snapshot.js",
+          "haval-h6-mqtt/reader.js"
+        ],
+        "invariant": "Reader topics are constructed from a validated identifier and the kinestra_bridge-readable snapshot carries no VIN or coordinates.",
+        "method": "source",
+        "result": "Topics are built from VEHICLE_ID, validated against ^[a-z0-9][a-z0-9_]{0,31}$ before connect (haval-h6-mqtt/mqtt.js:24,43-53,111), so no GWM-controlled value enters a topic level. buildSnapshot emits only schema, device id, timestamps, hy_eng_sts, model, tank capacity and item code/value/unit (haval-h6-mqtt/snapshot.js:31-49); coordinates are published only to attributes/location, which kinestra_bridge cannot read (haval-h6-mqtt/reader.js:235). Item values from GWM are copied as-is into the snapshot; content-level injection belongs to the peer reader.publishStatus unit.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h4-platform",
+        "reviewed_paths": [
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/reader.js",
+          "haval-h6-mqtt/index.js"
+        ],
+        "invariant": "After the broker drops the reader session, the reader re-asserts its retained availability.",
+        "method": "local",
+        "result": "Sandboxed harness using the real createPublisher and Reader with a fake MQTT client: the connect options are clientId gwm-reader-h6, clean true, retained will gwmbrasil/h6/availability = offline; start() publishes online once; after simulated close, reconnect and connect events, no further availability publish occurs and no connect listener is registered (output: RESULT: no online republish after reconnect).",
+        "artifact": "agents/h4-platform/artifacts/check-1.txt"
+      },
+      {
+        "agent_id": "v3-mosquitto",
+        "reviewed_paths": [
+          "README.md",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/reader.js",
+          "mosquitto/acl",
+          "mosquitto/mosquitto.conf"
+        ],
+        "invariant": "Phase 3 independent candidate validation of mosquitto/mosquitto.conf:clientid-takeover-will:haval-h6-mqtt/mqtt.js:createPublisher",
+        "method": "local",
+        "result": "decision: confirmed (medium)",
+        "artifact": "agents/v3-mosquitto/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "mosquitto/mosquitto.conf:clientid-takeover-will:haval-h6-mqtt/mqtt.js:createPublisher"
+    ],
+    "unresolved": [],
+    "hardening_notes": [
+      "The sbom job runs npx --yes @cyclonedx/cyclonedx-npm@6.0.1 (.github/workflows/ci.yml:112): the tool version is pinned but its transitive dependency tree resolves at run time without a lockfile. No in-repo consumer verifies or promotes the SBOM and the job holds no secret, so this is integrity hardening only; install the tool from a committed lockfile or pin its tarball integrity.",
+      "docker build --pull (.github/workflows/ci.yml:65) is harmless because both FROM lines are digest-pinned (Dockerfile:5,15); it only refreshes the same digests.",
+      ".pre-commit-config.yaml:4 uses the mutable tag rev v8.28.0 for the gitleaks hook; pin it to a commit SHA so a moved tag cannot change the developer-workstation hook.",
+      "MQTT on mqtt_internal is plaintext (docker-compose.yml:41, mosquitto/mosquitto.conf:4-5). A co-attached container with the default NET_RAW capability (Home Assistant, attached per README.md:147) could ARP-spoof the bridge and read MQTT passwords; consider a TLS listener or keeping HA on a separate network with a bridge.",
+      "init-secrets.sh makes the secret files 0644 (scripts/init-secrets.sh:32) and relies on the 0700 secrets/ directory for host isolation; a future move of the files out of that directory would expose them to other host users.",
+      "Mosquitto acl_file in 2.1.2 accepts every SUBSCRIBE and filters only on delivery (documented at test/integration/acl.test.js:14-17); a subscription-level deny would give defense in depth against delivery-path regressions."
+    ],
+    "validation_decision": "confirmed"
+  },
+  {
+    "coverage_id": "mosquitto%2Fmosquitto.conf%23listener%201883::docker-compose.yml%23networks.mqtt_internal::mosquitto::RESOURCE-EXHAUSTION-AND-AVAILABILITY.md%23Unbounded%20buffering%20and%20cardinality",
+    "canonical_refs": {
+      "surface": "mosquitto/mosquitto.conf#listener 1883",
+      "boundary": "docker-compose.yml#networks.mqtt_internal",
+      "subsystem": "mosquitto",
+      "attack_class": "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality"
+    },
+    "surface": "Broker listener and proxy port reachable from mqtt_internal peers",
+    "boundary": "Shared broker and proxy availability",
+    "subsystem": "broker and proxy",
+    "attack_class": "Unbounded buffering and cardinality",
+    "starting_paths": [
+      "mosquitto/mosquitto.conf",
+      "mosquitto/acl",
+      "proxy/squid.conf",
+      "docker-compose.yml",
+      "README.md"
+    ],
+    "ordinary_attack_class_block": null,
+    "selected_companion_blocks": [
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Core discipline",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Unbounded buffering and cardinality",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Reachable fatal error or deadlock",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Universal moves",
+      "RESOURCE-EXHAUSTION-AND-AVAILABILITY.md#Validation rules",
+      "CLOUD-AND-DEPLOYMENT.md#Unexpected service or management-plane reachability"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 2,
+    "status": "covered",
+    "agent_id": "h6-avail",
+    "reviewed_paths": [
+      "docker-compose.yml",
+      "mosquitto/acl",
+      "mosquitto/mosquitto.conf",
+      "proxy/squid.conf"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h6-avail",
+        "reviewed_paths": [
+          "mosquitto/mosquitto.conf",
+          "mosquitto/acl",
+          "docker-compose.yml"
+        ],
+        "invariant": "The broker listener reachable from mqtt_internal peers must gate lower-trust principals and bound/recover resource use so a peer cannot exhaust the shared broker.",
+        "method": "source",
+        "result": "mosquitto.conf:4-8 binds listener 1883 with allow_anonymous false, password_file and acl_file; docker-compose.yml:80-97 attaches mosquitto only to mqtt_internal (108-111, internal: true) and publishes no host port, so the listener is unreachable from outside the internal network. acl:3-14 scopes gwm_reader to write-only topics and homeassistant/kinestra_bridge to read-only; the only writer is the trusted reader. The homeassistant and kinestra_bridge consumers must join mqtt_internal through the gitignored docker-compose.override.yml (no host port is exposed), but they are owner-run, credentialed, read-only clients, so source defines no unauthenticated lower-trust peer on the listener. mosquitto.conf omits max_connections, message_size_limit, max_queued_messages and memory_limit (grep: none present) - a defense-in-depth gap - but docker-compose.yml:95-97 caps mosquitto memory at 64m and restart: unless-stopped plus persistence true / autosave_interval 300 recover retained state automatically, bounding the blast radius and giving an automatic recovery path for any pre-auth TCP or memory exhaustion.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h6-avail",
+        "reviewed_paths": [
+          "proxy/squid.conf",
+          "docker-compose.yml"
+        ],
+        "invariant": "The shared squid listener on mqtt_internal must restrict destinations and bound log/resource growth from connection churn.",
+        "method": "source",
+        "result": "squid.conf:6-18 permits only CONNECT to port 443 toward allowlist.txt dstdomains from RFC1918 localnet, denying everything else; squid is memory-capped at 128m (docker-compose.yml:76-78) and read_only/cap_drop ALL. json-file logging max-size 10m, max-file 3 (docker-compose.yml:12-15) bounds log growth from mosquitto connection_messages true and squid access logging under connection churn. squid.conf omits client_lifetime / maxconn (hardening), but destination restriction plus the container memory cap and auto-restart hold the shared-availability invariant; no repository-defined lower-trust principal reaches a sensitive handler.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "origin": "critic-1 missing_units",
+    "hardening_notes": [
+      "haval-h6-mqtt/carConnector.js:262-270 getChargeLogs returns data.list verbatim; add a reader-side list.slice(0, 100) (the pageSize:\"100\" at :266 is only a request hint the server may ignore) so the retained charging_history attribute size does not depend on the server honoring the page size.",
+      "haval-h6-mqtt/reader.js:56-58 formatChargeLogs constructs four Intl date/time formatters per charge entry; linear with a large constant and self-limited to the reader's own 0.5 cpu, so hardening not a finding - hoist the formatters out of the map callback.",
+      "mosquitto/mosquitto.conf omits max_connections, max_queued_messages, memory_limit and message_size_limit; add explicit values (message_size_limit sized just above the ~6 MiB retained charge payload - the 4 MiB input body expands ~1.4x through formatChargeLogs) as defense-in-depth against a compromised or credential-leaked peer on mqtt_internal, since the container memory cap is 64m.",
+      "proxy/squid.conf omits client_lifetime and per-client maxconn; add them to bound long-lived or many CONNECT tunnels from an internal peer, complementing the 128m container memory cap.",
+      "haval-h6-mqtt/mqtt.js:138-151 publish() sets no per-message timeout, so an awaited QoS1 publish promise pends for the entire broker outage; reliability hardening (trigger is broker unavailability, not lower-trust input, so not a finding) - add a publish deadline or a bounded pending-publish count."
+    ]
+  },
+  {
+    "coverage_id": "proxy%2Fsquid.conf%23http_access::proxy%2Fsquid.conf%23acl%20allowlist%20dstdomain::proxy::ATTACK-CLASSES.md%23Resource%20and%20file%20handling",
+    "canonical_refs": {
+      "surface": "proxy/squid.conf#http_access",
+      "boundary": "proxy/squid.conf#acl allowlist dstdomain",
+      "subsystem": "proxy",
+      "attack_class": "ATTACK-CLASSES.md#Resource and file handling"
+    },
+    "surface": "Squid CONNECT proxy",
+    "boundary": "Proxy domain allowlist",
+    "subsystem": "egress proxy",
+    "attack_class": "Resource and file handling",
+    "starting_paths": [
+      "proxy/squid.conf",
+      "proxy/allowlist.txt",
+      "docker-compose.yml",
+      "docker-compose.override.yml.example"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Resource and file handling",
+    "selected_companion_blocks": [
+      "CLOUD-AND-DEPLOYMENT.md#Core discipline",
+      "CLOUD-AND-DEPLOYMENT.md#Metadata and internal-service reachability",
+      "CLOUD-AND-DEPLOYMENT.md#Unexpected service or management-plane reachability",
+      "CLOUD-AND-DEPLOYMENT.md#Universal moves",
+      "CLOUD-AND-DEPLOYMENT.md#Validation rules"
+    ],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "h1-egress",
+    "reviewed_paths": [
+      "README.md",
+      "docker-compose.override.yml.example",
+      "docker-compose.yml",
+      "docs/RUNBOOK.md",
+      "proxy/allowlist.txt",
+      "proxy/squid.conf",
+      "test/integration/compose.it.yml",
+      "test/integration/netprobe.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h1-egress",
+        "reviewed_paths": [
+          "proxy/squid.conf",
+          "proxy/allowlist.txt",
+          "docker-compose.yml",
+          "docker-compose.override.yml.example",
+          "test/integration/netprobe.js",
+          "test/integration/compose.it.yml",
+          "README.md",
+          "docs/RUNBOOK.md"
+        ],
+        "invariant": "Squid lets an internal client open a CONNECT tunnel only to a host name on the reviewed allowlist, port 443, and to no other destination.",
+        "method": "source",
+        "result": "squid.conf:14-18 allows only CONNECT to SSL_ports that match 'acl allowlist dstdomain' (squid.conf:11), declared without -n. The vendor squid.conf shipped in the pinned ubuntu/squid 6.6 image (read from the local image without running it) documents that for dstdomain a reverse DNS lookup is tried when the URL host is an IP address and no match is found. So a CONNECT to an IP literal is matched against that IP's PTR name, which the IP owner controls. Clients are any RFC1918 source (squid.conf:8, 14): the reader and every container on mqtt_internal, which README.md:147 tells the owner to attach Home Assistant to. The integration probe tests only host-name CONNECTs (test/integration/netprobe.js:33-35), never an IP literal. Whether the bypass works depends on the gitignored allowlist and on PTR resolution from the deployed squid container, so this is needs_validation. DNS answers for allowlisted names are GWM-controlled, but the reader's TLS name check (check-1) prevents data disclosure to a rebound private destination.",
+        "artifact": null
+      },
+      {
+        "agent_id": "v4-proxy",
+        "reviewed_paths": [
+          "README.md",
+          "docker-compose.yml",
+          "proxy/squid.conf",
+          "test/integration/netprobe.js"
+        ],
+        "invariant": "Phase 3 independent candidate validation of proxy/squid.conf:acl-allowlist-dstdomain-rdns-ip-literal-connect",
+        "method": "local",
+        "result": "decision: confirmed (low)",
+        "artifact": "agents/v4-proxy/artifacts/check-1.txt"
+      }
+    ],
+    "result_fingerprints": [
+      "proxy/squid.conf:acl-allowlist-dstdomain-rdns-ip-literal-connect"
+    ],
+    "unresolved": [],
+    "hardening_notes": [
+      "haval-h6-mqtt/httpClient.js:79: TunnelAgent verifies the TLS name from options.servername, which Node derives from the request Host header, while the CONNECT target uses options.host (httpClient.js:64). check-1 case 10 accepted a wrong-name server when a caller set Host: other.test. No caller sets Host today (carConnector.js:21-43, 197). Bind servername to options.host and reject a caller-supplied host header in request().",
+      "haval-h6-mqtt/httpClient.js:172: toGwmError does not classify OpenSSL verify codes such as INVALID_PURPOSE as 'tls' (check-1 case 5 reported errorClass network). The request still fails closed; widen the regex so the RUNBOOK TLS triage sees it.",
+      "haval-h6-mqtt/config.js:145 and haval-h6-mqtt/httpClient.js:46: GWM_EXTRA_CA_FILE is trusted for every host, including *.gwmcloud.com in live mode. A test CA left configured (test/integration/compose.it.yml:11 uses one) would let its key holder impersonate GWM. Accept the extra CA only in fixture mode, or log a startup warning with its fingerprint in live mode.",
+      "haval-h6-mqtt/config.js:49: the live gate is a host-name suffix test. With both URLs set to IP literals or a non-gwmcloud alias, fixture mode sends the real credentials from the secret files without GWM_LIVE_ENABLED (check-2 G8). Only the owner sets these variables; consider an explicit GWM_FIXTURE=true plus refusal of non-test credentials in fixture mode.",
+      "haval-h6-mqtt/routes.js:123-130 and haval-h6-mqtt/httpClient.js:121: the guard checks the body object's own enumerable fields, but JSON.stringify honors toJSON, so the guarded and sent bodies can differ (check-2 case o). Bodies are code-built today; serialize first and guard JSON.parse(payload).",
+      "haval-h6-mqtt/httpClient.js:96 and 139: plain http: requests to non-gwmcloud hosts use a direct http.Agent and bypass HTTPS_PROXY. In the shipped compose this reaches only mqtt_internal peers (docker-compose.yml:48, 110-111); consider refusing http: unless the host is a loopback or explicitly named mock.",
+      "proxy/squid.conf:14-18: there is no destination deny for RFC1918, loopback or link-local addresses. A GWM-controlled DNS answer for an allowlisted name could point a tunnel at an internal host. The reader's TLS name check (check-1 case 2) prevents disclosure, but 'acl to_private dst 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 127.0.0.0/8 169.254.0.0/16 ::1 fc00::/7 fe80::/10' with 'http_access deny to_private' would close it at the proxy too."
+    ],
+    "validation_decision": "confirmed"
+  },
+  {
+    "coverage_id": "repository%23all::repository%23basic%20exposures::.::ATTACK-CLASSES.md%23Obvious%20things",
+    "canonical_refs": {
+      "surface": "repository#all",
+      "boundary": "repository#basic exposures",
+      "subsystem": ".",
+      "attack_class": "ATTACK-CLASSES.md#Obvious things"
+    },
+    "surface": "Whole repository",
+    "boundary": "Basic exposures",
+    "subsystem": "repository",
+    "attack_class": "Obvious things",
+    "starting_paths": [
+      ".gitignore",
+      ".gitleaksignore",
+      "docs/AUDIT.md",
+      "haval-h6-mqtt"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Obvious things",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h3-secrets",
+    "reviewed_paths": [
+      ".dockerignore",
+      ".gitignore",
+      ".gitleaksignore",
+      "Dockerfile",
+      "docker-compose.override.yml.example",
+      "docs/AUDIT.md",
+      "haval-h6-mqtt/config.js",
+      "haval-h6-mqtt/files/HomeAssistant_Dashboard_GWM.yaml",
+      "haval-h6-mqtt/files/haval_h6.zip",
+      "haval-h6-mqtt/files/nodered_flow_Haval.json",
+      "haval-h6-mqtt/httpClient.js",
+      "haval-h6-mqtt/index.js",
+      "haval-h6-mqtt/logger.js",
+      "haval-h6-mqtt/mqtt.js",
+      "haval-h6-mqtt/package-lock.json",
+      "haval-h6-mqtt/package.json",
+      "test/integration/acl.test.js",
+      "test/integration/run.sh"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          ".gitignore",
+          ".gitleaksignore",
+          "docs/AUDIT.md",
+          "docker-compose.override.yml.example",
+          "test/integration/run.sh",
+          "haval-h6-mqtt/files/nodered_flow_Haval.json",
+          "haval-h6-mqtt/files/HomeAssistant_Dashboard_GWM.yaml",
+          "haval-h6-mqtt/files/haval_h6.zip"
+        ],
+        "invariant": "No real credential, key or personal data file is tracked, and .gitignore covers the secret and personal paths",
+        "method": "source",
+        "result": "git ls-files lists no file under secrets/ and no .env, *.pem or *.key file. .gitignore ignores secrets/, docker-compose.override.yml, proxy/allowlist.local.txt, data/ and .env* (.gitignore:142-149), and git check-ignore confirms this. The grep for password, secret, token, bearer, apikey and private-key headers across tracked files found only references to file names, the throwaway IT values (test/integration/run.sh:47-48) and a fictitious VIN (docker-compose.override.yml.example:7). The only historic secret is upstream's haval-h6-mqtt/certs/gwm_general.key in 268237d. It is still reachable in history (git cat-file confirms). It is documented in docs/AUDIT.md section 10 and fingerprint-scoped in .gitleaksignore:3, and it was deleted from the tree in 31641d5. This is the upstream baseline, not owner credentials. haval_h6.zip holds only PNG images, and the upstream Node-RED flow and dashboard contain no credentials.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/config.js",
+          "haval-h6-mqtt/logger.js",
+          "haval-h6-mqtt/httpClient.js",
+          "haval-h6-mqtt/mqtt.js",
+          "haval-h6-mqtt/index.js",
+          "test/integration/acl.test.js"
+        ],
+        "invariant": "No debug bypass, dynamic code execution, unprotected endpoint, CORS, cookie, open redirect or security TODO exists in the shipped code",
+        "method": "source",
+        "result": "The shipped modules contain no eval, Function, vm, child_process or dynamic import. The reader opens no listener (no createServer or listen), so CORS, cookies, /debug and /metrics endpoints, and stack-trace responses do not apply. Node http does not follow redirects, and the API base is fixed from config. LOG_LEVEL accepts only INFO, ERROR or DEBUG (config.js:141-142), and DEBUG adds no sensitive output. The only TODO, FIXME or HACK is a quoted Mosquitto source comment (test/integration/acl.test.js:15). TLS is mandatory for gwmcloud hosts (httpClient.js:116; config.js:37). MQTT is plaintext on the internal network by design; the compose network design is owned by a peer.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "haval-h6-mqtt/package.json",
+          "haval-h6-mqtt/package-lock.json",
+          "Dockerfile",
+          ".dockerignore"
+        ],
+        "invariant": "Dependencies and images are pinned, and only production sources enter the image",
+        "method": "source",
+        "result": "package.json pins exact versions (mqtt 5.16.0). The lockfile production tree has 44 packages, including ws 8.22.0, minimist 1.2.8 and socks 2.8.10. None of them is at a version with an advisory known to this reviewer. A live advisory lookup (npm audit) is prohibited in this run, and CI runs npm audit --audit-level=high (.github/workflows/ci.yml:40, peer-owned). The Dockerfile pins both base images by digest and runs npm ci --omit=dev --ignore-scripts. .dockerignore admits only package.json, the lockfile and *.js (.dockerignore:1-4).",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "Fixture-mode credential egress (config.js:49, carConnector.js:170-172; local check-1 D): any two non-gwmcloud URLs select fixture mode without GWM_LIVE_ENABLED. loadConfig still loads the real /run/secrets credentials, and login sends the account and the MD5 password over plain http if the URLs say so. The MD5 alone is enough to sign in. A mistyped or migrated GWM domain silently bypasses the live gate. Fix: require an explicit GWM_FIXTURE=true. In fixture mode, refuse to start when /run/secrets/gwm_* are the defaults, or require https. Regression test: liveGate with two non-gwmcloud URLs and no fixture flag returns run:false.",
+      "No single-flight login (carConnector.js:206-222; local check-1 A): the status and charge timers that call authed() together each log in, so one renewal uses 2 slots of the 3-per-hour cap. README says that two sign-ins sign each other out, so this can create self-inflicted auth failures toward the halt. Fix: memoize the in-flight login promise in GwmClient and reuse it, so that concurrent authed() calls perform exactly one login.",
+      "Store.load fails open (store.js:24-31; local check-1 B): when state.json is unreadable, the store starts empty and silently clears the persisted halt flag and the login-cap history. Fix: on a non-ENOENT read or parse error, exit with EX_CONFIG, or treat the cap as exhausted for one window and keep halted=true until the owner runs --reset-halt.",
+      "LoginLimiter.prune drops future-dated attempts (backoff.js:51; local check-1 C): a backward clock step resets the persisted cap. Fix: clamp entries with a > t to t, so they still count for the window.",
+      "MQTT_URL is not validated (config.js:174): mqtt://user:pass@host bypasses the file-only secret rule. The MQTT password is also never passed to registerSecret (index.js:65, config.js:133). Fix: parse MQTT_URL, refuse userinfo, and call registerSecret(config.mqttPassword) at startup.",
+      "unregisterSecret on token rotation (carConnector.js:134-135, 179-180) removes old tokens from the redactor. The secret Set has no reference count, so a collision with another registered value also unregisters that value. Opaque (non-JWT) old tokens would then log in clear. Fix: keep rotated tokens registered for the process lifetime.",
+      "first-run.sh report section 1 drops the Squid client address field (first-run.sh:39 prints $3,$5; squid.conf:26 puts %>a in $2). CONNECTs from any container on mqtt_internal (HA, others) look like reader attempts during the allowlist review. Fix: print $2 too, or filter on the gwm-reader container IP.",
+      "derive-dashboard.js denylist (derive-dashboard.js:20) does not cover toggle, url or fire-dom-event actions, or hass.callService inside custom:button-card [[[ ]]] templates. Fix: switch to an allowlist of action types (more-info, navigate, none), and reject templates that reference hass.call*.",
+      "test/integration/run.sh:83-88 interpolates netprobe JSON values into bash -c. This is safe today because the values are Node constants or integers. Fix: pass them as positional arguments (bash -c '...' _ \"$v\"), as run.sh:112 already does.",
+      "init-secrets.sh:32 makes gwm_username and gwm_password mode 0644. Their confidentiality on the host depends only on secrets/ staying 0700 (init-secrets.sh:12-14). Document this, or use a group-readable 0640 with the container gid."
+    ]
+  },
+  {
+    "coverage_id": "scripts%2Ffirst-run.sh%23main::scripts%2Ffirst-run.sh%23compose%20argv::scripts::ATTACK-CLASSES.md%23Injection",
+    "canonical_refs": {
+      "surface": "scripts/first-run.sh#main",
+      "boundary": "scripts/first-run.sh#compose argv",
+      "subsystem": "scripts",
+      "attack_class": "ATTACK-CLASSES.md#Injection"
+    },
+    "surface": "Owner and test shell scripts",
+    "boundary": "Shell command construction",
+    "subsystem": "operator scripts",
+    "attack_class": "Injection",
+    "starting_paths": [
+      "scripts/first-run.sh",
+      "scripts/init-secrets.sh",
+      "scripts/derive-dashboard.js",
+      "test/integration/run.sh"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Injection",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [
+      {
+        "block": "CLIENT-SIDE.md#Core discipline",
+        "reason": "HA dashboard rendering is third-party HA code; covered as a second-order sink under Injection"
+      },
+      {
+        "block": "AI-AND-LLM.md#Core discipline",
+        "reason": "no model, prompt or tool input"
+      },
+      {
+        "block": "MEMORY-SAFETY-AND-BINARY.md#Core discipline",
+        "reason": "JavaScript only; no native code in the repo"
+      },
+      {
+        "block": "DESKTOP-MOBILE-AND-LOCAL-IPC.md#Core discipline",
+        "reason": "no desktop, mobile or local IPC surface"
+      },
+      {
+        "block": "DATA-ISOLATION-AND-LIFECYCLE.md#Core discipline",
+        "reason": "single owner, no tenants; state retention covered under secrets"
+      }
+    ],
+    "prior_status": "none",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "h3-secrets",
+    "reviewed_paths": [
+      "docs/RUNBOOK.md",
+      "ha/dashboard.yaml",
+      "proxy/squid.conf",
+      "scripts/derive-dashboard.js",
+      "scripts/first-run.sh",
+      "scripts/init-secrets.sh",
+      "test/integration/netprobe.js",
+      "test/integration/run.sh"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "scripts/first-run.sh",
+          "proxy/squid.conf",
+          "docs/RUNBOOK.md"
+        ],
+        "invariant": "Compose argv and the log report cannot be steered into command execution by a lower-trust input",
+        "method": "source",
+        "result": "GWM_READER_COMPOSE_ARGS is split by read -a into an array and passed quoted (first-run.sh:24-25). It is not evaluated or globbed, and only the owner sets it. --report <since> is passed as one argv element (first-run.sh:30, 38). The log parsing uses awk, grep and sed on text and prints to stdout only (first-run.sh:35-52). There is no eval, no bash -c and no file write. The report drops the Squid client address (awk prints $3,$5, but squid.conf:26 puts %>a in $2). A CONNECT from another container on mqtt_internal therefore looks like a reader attempt. The RUNBOOK stop rule (docs/RUNBOOK.md:52-54) mitigates this, so it is hardening.",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "test/integration/run.sh",
+          "test/integration/netprobe.js",
+          "scripts/init-secrets.sh"
+        ],
+        "invariant": "Container output interpolated into host bash -c cannot carry shell syntax",
+        "method": "source",
+        "result": "run.sh interpolates jq_get values from netprobe output into bash -c strings (run.sh:83-88). netprobe.js emits only Node error codes, the constants CONNECTED, ETIMEDOUT and RESOLVED, or integer HTTP status codes parsed by Node (netprobe.js:11-37). It runs from the repo's own image. No lower-trust value reaches those strings. The other bash -c strings interpolate only the constant project name, constant file paths and docker container ids (run.sh:68, 72-77, 104, 113). The report is passed as $1, not interpolated (run.sh:112). init-secrets.sh passes secrets in a single-quoted sh -c with fixed user names inside a --network none container (init-secrets.sh:36-42).",
+        "artifact": null
+      },
+      {
+        "agent_id": "h3-secrets",
+        "reviewed_paths": [
+          "scripts/derive-dashboard.js",
+          "ha/dashboard.yaml"
+        ],
+        "invariant": "Third-party upstream dashboard YAML cannot inject an actuating action or active content into the committed HA dashboard",
+        "method": "source",
+        "result": "The derive script removes nodes that match a denylist (derive-dashboard.js:20-29) and refuses its output if a forbidden token remains (derive-dashboard.js:62). The committed ha/dashboard.yaml contains one navigate action (ha/dashboard.yaml:926-927) and button-card [[[ ]]] templates that return only fixed colour and text strings from entity states (ha/dashboard.yaml:1616-1626). It has no call-service, url, iframe or gwmcloud reference. The reader exposes no command entities (mqtt.js:57-67), so a missed action cannot reach the vehicle. The denylist does not cover toggle, url, fire-dom-event or callService inside JS templates. That is hardening for future upstream merges.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": [],
+    "hardening_notes": [
+      "Fixture-mode credential egress (config.js:49, carConnector.js:170-172; local check-1 D): any two non-gwmcloud URLs select fixture mode without GWM_LIVE_ENABLED. loadConfig still loads the real /run/secrets credentials, and login sends the account and the MD5 password over plain http if the URLs say so. The MD5 alone is enough to sign in. A mistyped or migrated GWM domain silently bypasses the live gate. Fix: require an explicit GWM_FIXTURE=true. In fixture mode, refuse to start when /run/secrets/gwm_* are the defaults, or require https. Regression test: liveGate with two non-gwmcloud URLs and no fixture flag returns run:false.",
+      "No single-flight login (carConnector.js:206-222; local check-1 A): the status and charge timers that call authed() together each log in, so one renewal uses 2 slots of the 3-per-hour cap. README says that two sign-ins sign each other out, so this can create self-inflicted auth failures toward the halt. Fix: memoize the in-flight login promise in GwmClient and reuse it, so that concurrent authed() calls perform exactly one login.",
+      "Store.load fails open (store.js:24-31; local check-1 B): when state.json is unreadable, the store starts empty and silently clears the persisted halt flag and the login-cap history. Fix: on a non-ENOENT read or parse error, exit with EX_CONFIG, or treat the cap as exhausted for one window and keep halted=true until the owner runs --reset-halt.",
+      "LoginLimiter.prune drops future-dated attempts (backoff.js:51; local check-1 C): a backward clock step resets the persisted cap. Fix: clamp entries with a > t to t, so they still count for the window.",
+      "MQTT_URL is not validated (config.js:174): mqtt://user:pass@host bypasses the file-only secret rule. The MQTT password is also never passed to registerSecret (index.js:65, config.js:133). Fix: parse MQTT_URL, refuse userinfo, and call registerSecret(config.mqttPassword) at startup.",
+      "unregisterSecret on token rotation (carConnector.js:134-135, 179-180) removes old tokens from the redactor. The secret Set has no reference count, so a collision with another registered value also unregisters that value. Opaque (non-JWT) old tokens would then log in clear. Fix: keep rotated tokens registered for the process lifetime.",
+      "first-run.sh report section 1 drops the Squid client address field (first-run.sh:39 prints $3,$5; squid.conf:26 puts %>a in $2). CONNECTs from any container on mqtt_internal (HA, others) look like reader attempts during the allowlist review. Fix: print $2 too, or filter on the gwm-reader container IP.",
+      "derive-dashboard.js denylist (derive-dashboard.js:20) does not cover toggle, url or fire-dom-event actions, or hass.callService inside custom:button-card [[[ ]]] templates. Fix: switch to an allowlist of action types (more-info, navigate, none), and reject templates that reference hass.call*.",
+      "test/integration/run.sh:83-88 interpolates netprobe JSON values into bash -c. This is safe today because the values are Node constants or integers. Fix: pass them as positional arguments (bash -c '...' _ \"$v\"), as run.sh:112 already does.",
+      "init-secrets.sh:32 makes gwm_username and gwm_password mode 0644. Their confidentiality on the host depends only on secrets/ staying 0700 (init-secrets.sh:12-14). Document this, or use a group-readable 0640 with the container gid."
+    ]
+  }
+]

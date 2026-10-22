@@ -1,0 +1,23 @@
+{
+ "A_concurrent_authed_logins": 2,
+ "A_after_cap_error_class": "login_capped",
+ "A_logins_sent_total": 3,
+ "B_before_corruption_tryAcquire_ok": false,
+ "B_after_corruption_halted": null,
+ "B_after_corruption_tryAcquire_ok": true,
+ "B_warning": "state file unreadable; starting empty",
+ "C_clock_back_tryAcquire_ok": true,
+ "D_mode": "fixture",
+ "D_liveAllowed": false,
+ "D_login_request": {
+  "protocol": "http:",
+  "host": "lookalike.invalid",
+  "bodyKeys": [
+   "deviceid",
+   "password",
+   "account"
+  ],
+  "accountMatches": true,
+  "passwordIsMd5": true
+ }
+}

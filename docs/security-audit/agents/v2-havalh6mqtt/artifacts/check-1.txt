@@ -1,0 +1,8 @@
+node v24.22.0
+redactString api_+a*4000 ms=114.43 linear_baseline_ms=0.70
+redactString api_+a*8000 ms=421.86 linear_baseline_ms=0.78
+redactString api_+a*16000 ms=1659.39 linear_baseline_ms=4.08
+redactString api_+a*32000 ms=6703.96 linear_baseline_ms=9.42
+redactString api_+a*64000 ms=26600.54 linear_baseline_ms=13.40
+EMAIL_only_64000_ms=25596.38
+EMAIL_bounded_{1,64}_64000_ms=167.65

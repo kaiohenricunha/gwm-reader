@@ -1,0 +1,13 @@
+A login_code_len=2000 pollStatus_ms=4.9 log_bytes=2200
+A login_code_len=4000 pollStatus_ms=12.5 log_bytes=4200
+A login_code_len=8000 pollStatus_ms=113.4 log_bytes=8200
+A login_code_len=16000 pollStatus_ms=466.4 log_bytes=16200
+B vehicles=1001 pollStatus_ms=13.2
+B vehicles=2001 pollStatus_ms=86.4
+B vehicles=4001 pollStatus_ms=211.4
+C status_message topic=gwmbrasil/h6/status_message/state retain=true
+C status_message=WINDOW_OPEN@Vidro Dianteiro Esquerdo | TIRE_PRESSURE@Pressão do Pneu Dianteiro Direito@14@20 | [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)°C | TIRE_PRESSURE_DEFAULTS@35@39
+C split_items=["WINDOW_OPEN@Vidro Dianteiro Esquerdo","TIRE_PRESSURE@Pressão do Pneu Dianteiro Direito@14@20","[Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)°C","TIRE_PRESSURE_DEFAULTS@35@39"]
+C model_state=HAVAL H6 **INJ**
+C snapshot_items=[{"code":"2210001","value":"2","unit":null},{"code":"2101002","value":"100","unit":null},{"code":"2101006","value":"20 | [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)","unit":null},{"code":"x<script>","value":{"nested":[1,2]},"unit":"<b>"}]
+D reader_error_attributes retain=true error_class_len=320 head=api_99999<img src=x>ZZZZZZZZZZZZZZZZZZZZ

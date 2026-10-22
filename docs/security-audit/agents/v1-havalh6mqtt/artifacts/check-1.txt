@@ -1,0 +1,10 @@
+V0 discovery {"topic":"homeassistant/sensor/gwmbrasil/h6_status_message/config","id":"sensor.gwmbrasil_h6_status_message","state_topic":"gwmbrasil/h6/status_message/state"}
+V1_pipe topic=gwmbrasil/h6/status_message/state retain=true len=179
+V1_pipe payload="TIRE_PRESSURE@Pressão do Pneu Dianteiro Direito@14@20 | [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)°C | TIRE_PRESSURE_DEFAULTS@35@39"
+V1_pipe dashboard_branches=["TIRE_PRESSURE partes[3]=\"20 \"","ELSE item=\" [Atualize sua conta GWM](https://example.invalid/login) ![](https://example.invalid/p.png)°C \"","TIRE_PRESSURE_DEFAULTS"]
+V2_nopipe topic=gwmbrasil/h6/status_message/state retain=true len=159
+V2_nopipe payload="TIRE_PRESSURE@Pressão do Pneu Dianteiro Direito@14@20 [Atualize](https://example.invalid/l) ![](https://example.invalid/b.png)°C | TIRE_PRESSURE_DEFAULTS@35@39"
+V2_nopipe dashboard_branches=["TIRE_PRESSURE partes[3]=\"20 [Atualize](https://example.invalid/l) ![](https://example.invalid/b.png)°C \"","TIRE_PRESSURE_DEFAULTS"]
+V3_control_numeric topic=gwmbrasil/h6/status_message/state retain=true len=86
+V3_control_numeric payload="TIRE_PRESSURE@Pressão do Pneu Dianteiro Direito@14@20°C | TIRE_PRESSURE_DEFAULTS@35@39"
+V3_control_numeric dashboard_branches=["TIRE_PRESSURE partes[3]=\"20°C \"","TIRE_PRESSURE_DEFAULTS"]

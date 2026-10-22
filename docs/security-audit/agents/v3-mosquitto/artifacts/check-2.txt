@@ -1,0 +1,94 @@
+chown: /mosquitto/data: Operation not permitted
+chown: /mosquitto/data: Operation not permitted
+Adding password for user gwm_reader
+Adding password for user homeassistant
+Adding password for user kinestra_bridge
+=== effective conf (diff from repo, only paths differ) ===
+--- /w/mosquitto/mosquitto.conf
++++ /tmp/mosquitto.conf
+@@ -4,11 +4,11 @@
+ listener 1883
+ protocol mqtt
+ allow_anonymous false
+-password_file /mosquitto/secrets/passwd
+-acl_file /mosquitto/config/acl
++password_file /tmp/passwd
++acl_file /w/mosquitto/acl
+ 
+ persistence true
+-persistence_location /mosquitto/data/
++persistence_location /tmp/data/
+ autosave_interval 300
+ 
+ log_dest stdout
+@@ -16,3 +16,4 @@
+ log_type warning
+ log_type notice
+ connection_messages true
++user root
+=== acl in use (repo file, verbatim) ===
+# gwm-reader publishes only. It has no read rule, so it cannot subscribe to
+# anything, including the Home Assistant topics. Discovery is retained.
+user gwm_reader
+topic write gwmbrasil/#
+topic write homeassistant/+/gwmbrasil/#
+
+# Home Assistant reads only.
+user homeassistant
+topic read gwmbrasil/#
+topic read homeassistant/#
+
+# Kinestra (or any downstream bridge) reads only the raw snapshots.
+user kinestra_bridge
+topic read gwmbrasil/+/snapshot
+=== starting broker ===
+1792678692: Info: running mosquitto as user: root.
+1792678692: Warning: Mosquitto should not be run as root/administrator.
+1792678711: New connection from 127.0.0.1:40356 on port 1883.
+1792678711: New client connected from 127.0.0.1:40356 as gwm-reader-h6 (p5, c1, k60, u'gwm_reader').
+1792678711: New connection from 127.0.0.1:40372 on port 1883.
+1792678711: New client connected from 127.0.0.1:40372 as hareader-after-online (p5, c1, k60, u'homeassistant').
+1792678713: Client hareader-after-online [127.0.0.1:40372] disconnected: connection closed by client.
+1792678713: New connection from 127.0.0.1:40386 on port 1883.
+1792678713: New client connected from 127.0.0.1:40386 as direct-homeassistant (p5, c1, k60, u'homeassistant').
+1792678713: Client direct-homeassistant [127.0.0.1:40386] disconnected: connection closed by client.
+1792678713: New connection from 127.0.0.1:40398 on port 1883.
+1792678713: New client connected from 127.0.0.1:40398 as hareader-dw-homeassistant (p5, c1, k60, u'homeassistant').
+1792678714: Client hareader-dw-homeassistant [127.0.0.1:40398] disconnected: connection closed by client.
+1792678714: New connection from 127.0.0.1:48580 on port 1883.
+1792678714: Client gwm-reader-h6 [127.0.0.1:40356] disconnected: session taken over.
+1792678714: New client connected from 127.0.0.1:48580 as gwm-reader-h6 (p5, c1, k60, u'homeassistant').
+1792678715: New connection from 127.0.0.1:48596 on port 1883.
+1792678715: New client connected from 127.0.0.1:48596 as hareader-to-homeassistant (p5, c1, k60, u'homeassistant').
+1792678716: Client hareader-to-homeassistant [127.0.0.1:48596] disconnected: connection closed by client.
+1792678716: Client gwm-reader-h6 [127.0.0.1:48580] disconnected: connection closed by client.
+1792678717: New connection from 127.0.0.1:48600 on port 1883.
+1792678717: New client connected from 127.0.0.1:48600 as hareader-post-homeassistant (p5, c1, k60, u'homeassistant').
+1792678718: Client hareader-post-homeassistant [127.0.0.1:48600] disconnected: connection closed by client.
+1792678719: New connection from 127.0.0.1:48610 on port 1883.
+1792678719: New client connected from 127.0.0.1:48610 as gwm-reader-h6 (p5, c1, k60, u'gwm_reader').
+1792678719: New connection from 127.0.0.1:48620 on port 1883.
+1792678719: New client connected from 127.0.0.1:48620 as hareader-reset-homeassistant (p5, c1, k60, u'homeassistant').
+1792678720: Client hareader-reset-homeassistant [127.0.0.1:48620] disconnected: connection closed by client.
+1792678720: New connection from 127.0.0.1:48624 on port 1883.
+1792678720: New client connected from 127.0.0.1:48624 as direct-kinestra_bridge (p5, c1, k60, u'kinestra_bridge').
+1792678720: Client direct-kinestra_bridge [127.0.0.1:48624] disconnected: connection closed by client.
+1792678720: New connection from 127.0.0.1:48640 on port 1883.
+1792678720: New client connected from 127.0.0.1:48640 as hareader-dw-kinestra_bridge (p5, c1, k60, u'homeassistant').
+1792678721: Client hareader-dw-kinestra_bridge [127.0.0.1:48640] disconnected: connection closed by client.
+1792678721: New connection from 127.0.0.1:48642 on port 1883.
+1792678721: Client gwm-reader-h6 [127.0.0.1:48610] disconnected: session taken over.
+1792678721: New client connected from 127.0.0.1:48642 as gwm-reader-h6 (p5, c1, k60, u'kinestra_bridge').
+1792678722: New connection from 127.0.0.1:48652 on port 1883.
+1792678722: New client connected from 127.0.0.1:48652 as hareader-to-kinestra_bridge (p5, c1, k60, u'homeassistant').
+1792678723: Client hareader-to-kinestra_bridge [127.0.0.1:48652] disconnected: connection closed by client.
+1792678723: Client gwm-reader-h6 [127.0.0.1:48642] disconnected: connection closed by client.
+1792678724: New connection from 127.0.0.1:52400 on port 1883.
+1792678724: New client connected from 127.0.0.1:52400 as hareader-post-kinestra_bridge (p5, c1, k60, u'homeassistant').
+1792678725: Client hareader-post-kinestra_bridge [127.0.0.1:52400] disconnected: connection closed by client.
+1792678726: New connection from 127.0.0.1:52416 on port 1883.
+1792678726: New client connected from 127.0.0.1:52416 as gwm-reader-h6 (p5, c1, k60, u'gwm_reader').
+1792678726: New connection from 127.0.0.1:52430 on port 1883.
+1792678726: New client connected from 127.0.0.1:52430 as hareader-reset-kinestra_bridge (p5, c1, k60, u'homeassistant').
+1792678728: Client hareader-reset-kinestra_bridge [127.0.0.1:52430] disconnected: connection closed by client.
+1792678728: Client gwm-reader-h6 [127.0.0.1:52416] disconnected.
