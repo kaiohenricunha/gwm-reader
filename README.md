@@ -204,17 +204,25 @@ npm run test:integration
 
 **The fork's `main` branch is unhardened upstream code.** It holds upstream's
 `docker-build-publish.yml`, which publishes and signs an image on every push to `main`. It also
-serves upstream's HA add-on repository, which the HA Supervisor builds without GitHub Actions. The
-recommended fix is to make `hardened` the default branch and to stop pushing to `main`. Until then,
-before Actions are on, or before you use "Sync fork":
+serves upstream's HA add-on repository, which the HA Supervisor builds without GitHub Actions.
+Never push to `main` and never use "Sync fork".
 
-1. Allow only the SHA-pinned actions that `ci.yml` uses.
-2. Disable that workflow (`gh workflow disable docker-build-publish.yml`).
-3. Set the default workflow token to read-only.
+**GitHub settings on the fork** (applied on 2026-10-22):
 
-These three settings do not stop a *new* upstream workflow file that declares its own write
-permissions. So never enable Actions while `main` mirrors upstream unreviewed, and keep the
-`.github/` rule above for `hardened`.
+1. The default branch is `hardened`.
+2. Actions may run only `actions/checkout@*`, `actions/setup-node@*` and `actions/upload-artifact@*`.
+3. "Require actions to be pinned to a full-length commit SHA" is on. Every `uses:` must name a commit
+   ID, and upstream's `@v4`-style workflow cannot run.
+4. The default workflow token is read-only.
+
+Dependabot update PRs for these three actions pass CI with no settings change: each new version is
+a new commit ID of an allowed action. Review them like any other PR. A PR that adds a *different*
+action fails with "action not allowed". Add that action to Settings › Actions only after you have
+reviewed it.
+
+These settings do not stop a *new* upstream workflow file that declares its own write permissions
+and uses only `run:` steps. So keep the `.github/` rule above for `hardened` (`repo-guard.test.js`
+enforces it).
 
 ## Tests and CI
 

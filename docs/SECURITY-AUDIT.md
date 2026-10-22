@@ -50,10 +50,10 @@ No finding gives vehicle control, credential disclosure or code execution. The r
 
 ## Owner actions that stay open
 
-1. **Repository default branch:** make `hardened` the default branch of
-   `kaiohenricunha/gwm-reader`, and stop pushing to or syncing `main`. Do not enable GitHub Actions
-   while `main` holds unreviewed upstream workflows. This is a GitHub setting, so it was not
-   changed in this session.
+1. **Repository settings:** done on 2026-10-22. `hardened` is the default branch. Actions may run
+   only SHA-pinned `actions/checkout`, `actions/setup-node` and `actions/upload-artifact`, and the
+   default token is read-only (README, "Update from upstream"). Still open: never push to or sync
+   `main`, which keeps unreviewed upstream workflows and the add-on repository.
 2. **One MQTT session per user:** keep it in mind when you attach Home Assistant and the Kinestra
    bridge. Create a separate read-only user for any debugging tool (RUNBOOK 5b).
 3. Run `docs/RUNBOOK.md` before any live use, as before.
