@@ -13,14 +13,6 @@ const sensorTopics = {
     device_class: "battery",
     entity_type: "sensor",
     state_class: "measurement",
-    actionable: {
-      action: "chargingLogs",
-      description: "Histórico de carregamento",
-      entity_type: "button",
-      icon: "mdi:clipboard-text-clock",
-      parent_attributes: "Y",
-      link_type: "press", //(sync: sincroniza os status, toggle: invertido, press: acionamento sem sincronização)
-    }
   },
   2011007: {
     description: "Autonomia Combustão",
@@ -42,7 +34,7 @@ const sensorTopics = {
     device_class: "pressure",
     entity_type: "sensor",
     state_class: "measurement",
-    formula: "Math.floor(parseInt(value) * 0.145038)",
+    convert: "kpa_to_psi",
     pressure_threshold_min: 35,
     pressure_threshold_max: 39,
   },
@@ -52,7 +44,7 @@ const sensorTopics = {
     device_class: "pressure",
     entity_type: "sensor",
     state_class: "measurement",
-    formula: "Math.floor(parseInt(value) * 0.145038)",
+    convert: "kpa_to_psi",
     pressure_threshold_min: 35,
     pressure_threshold_max: 39,
   },
@@ -62,7 +54,7 @@ const sensorTopics = {
     device_class: "pressure",
     entity_type: "sensor",
     state_class: "measurement",
-    formula: "Math.floor(parseInt(value) * 0.145038)",
+    convert: "kpa_to_psi",
     pressure_threshold_min: 35,
     pressure_threshold_max: 39,
   },
@@ -72,7 +64,7 @@ const sensorTopics = {
     device_class: "pressure",
     entity_type: "sensor",
     state_class: "measurement",
-    formula: "Math.floor(parseInt(value) * 0.145038)",
+    convert: "kpa_to_psi",
     pressure_threshold_min: 35,
     pressure_threshold_max: 39,
   },
@@ -136,13 +128,6 @@ const sensorTopics = {
     state_charging: "1",
     state_finished: "3",
     state_waiting: "5",
-    actionable: {
-      action: "stopCharging",
-      description: "Interromper carregamento",
-      entity_type: "button",
-      icon: "mdi:ev-plug-type2",
-      link_type: "press", //(sync: sincroniza os status, toggle: invertido, press: acionamento sem sincronização)
-    }
   },
   2210005: {
     description: "Posição do Teto Solar", //(3: Fechado >3 posição do teto solar em %)
@@ -150,22 +135,6 @@ const sensorTopics = {
     entity_type: "sensor",
     icon: "mdi:shield-sun",
     state_closed: "3",
-    actionable: [
-      {
-        action: "skyWindowOpen",
-        description: "Abrir teto solar",
-        entity_type: "button",
-        icon: "mdi:emoticon-cool-outline",
-        link_type: "press",
-      },
-      {
-        action: "skyWindowClose",
-        description: "Fechar teto solar",
-        entity_type: "button",
-        icon: "mdi:emoticon-cool",
-        link_type: "press",
-      }
-    ]
   },
   2210001: {
     description: "Vidro Dianteiro Esquerdo",
@@ -175,22 +144,6 @@ const sensorTopics = {
     state_closed: "1",
     state_open: "2",
     state_partially_open: "3",
-    actionable: [
-      {
-        action: "windowsOpen",
-        description: "Abrir os vidros",
-        entity_type: "button",
-        icon: "mdi:car-windshield-outline",
-        link_type: "press"
-      },
-      {
-        action: "windowsClose",
-        description: "Fechar os vidros",
-        entity_type: "button",
-        icon: "mdi:car-windshield",
-        link_type: "press"
-      }
-    ]
 
   },
   2210002: {
@@ -241,13 +194,6 @@ const sensorTopics = {
     icon: "mdi:air-conditioner",
     state_on: "1",
     state_off: "0",
-    actionable: {
-      action: "airConditioner",
-      description: "Ativação do ar condicionado",
-      entity_type: "button",
-      icon: "mdi:fan-clock",
-      link_type: "press", //(sync: sincroniza os status, toggle: invertido, press: acionamento sem sincronização)
-    }
   },
   2202099: {
     description: "Estado do Purificador de Ar",
@@ -264,22 +210,6 @@ const sensorTopics = {
     icon: "mdi:car-door-lock",
     state_open: "1",
     state_closed: "0",
-    actionable: [
-      {
-        action: "doorsOpen",
-        description: "Abrir as portas",
-        entity_type: "button",
-        icon: "mdi:car-door",
-        link_type: "press"
-      },
-      {
-        action: "doorsClose",
-        description: "Fechar as portas",
-        entity_type: "button",
-        icon: "mdi:car-door-lock",
-        link_type: "press"
-      }
-    ]
   },
   2206001: {
     description: "Porta-Malas",
@@ -288,22 +218,6 @@ const sensorTopics = {
     icon: "mdi:car-back",
     state_open: "1",
     state_closed: "0",
-    actionable: [
-      {
-        action: "trunkOpen",
-        description: "Abrir porta-malas",
-        entity_type: "button",
-        icon: "mdi:car-door",
-        link_type: "press"
-      },
-      {
-        action: "trunkClose",
-        description: "Fechar porta-malas",
-        entity_type: "button",
-        icon: "mdi:car-door-lock",
-        link_type: "press"
-      }
-    ]
   },
   2206002: {
     description: "Porta Dianteira Esquerda",

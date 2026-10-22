@@ -25,7 +25,6 @@
     "gwm_username": "email",
     "gwm_password": "password",
     "gwm_vin": "str",
-    "gwm_pin": "password?",
     "mqtt_server": "str?",
     "mqtt_user": "str?",
     "mqtt_pass": "password?",

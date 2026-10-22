@@ -1,347 +1,155 @@
+"use strict";
+
+// Publish-only MQTT side of gwm-reader.
+//
+// One persistent connection, QoS 1, with a retained last-will "offline" on
+// the availability topic. This module never subscribes: Home Assistant
+// discovery is published retained, so the reader does not need to listen to
+// homeassistant/status, and there are no command entities (no button,
+// switch, lock or select). The VIN never appears in a topic or a payload;
+// the vehicle is named by VEHICLE_ID.
+//
+// Topics (VEHICLE_ID = <id>):
+//   gwmbrasil/<id>/availability                 online | offline (retained)
+//   gwmbrasil/<id>/<key>/state                  entity state (retained)
+//   gwmbrasil/<id>/<key>/attributes             entity attributes
+//   gwmbrasil/<id>/snapshot                     raw status snapshot (snapshot.js)
+//   homeassistant/<component>/gwmbrasil/<id>_<key>/config   discovery (retained)
+
 const mqtt = require("mqtt");
-var slugify = require("slugify");
-const carConnector = require("./carConnector");
-const storage = require("./storage");
-const { LogType, printLog } = require('./utils');
 
-const prefix = 'gwmbrasil';
-require("dotenv").config();
+const { sensorTopics } = require("./map");
 
-const { MQTT_HOST, MQTT_PASS, MQTT_USER, PIN } = process.env;
+const PREFIX = "gwmbrasil";
+const VEHICLE_ID = /^[a-z0-9][a-z0-9_]{0,31}$/;
 
-const EntityType = {
-  SENSOR: "sensor",
-  BINARY_SENSOR: "binary_sensor",
-  INPUT_TEXT: "input_text",
-  IMAGE: "image",
-  DEVICE_TRACKER: "device_tracker",
-  SWITCH: "switch",
-  BUTTON: "button",
-  SELECT: "select",
-};
-
-let topicsAndActions = JSON.parse(storage.getItem('topicsAndActions')) || {};
-let topicsToSubscribe = JSON.parse(storage.getItem('topicsToSubscribe')) || {};
-
-const mqttModule = {
-  connect() {
-    return mqtt.connect(MQTT_HOST, {
-      password: MQTT_PASS,
-      username: MQTT_USER,
-    });
-  },
-  checkConnection() {
-    return new Promise((resolve, reject) => {
-      const client = mqttModule.connect();
-      client.on("connect", resolve);
-      client.on("error", reject);
-      client.end();
-    });
-  },
-  sendMqtt(topic, payload, options) {
-    const client = mqttModule.connect();
-
-    client.on("connect", () => {
-      client.publish(topic, payload, options, (err) => {
-        if (err) printLog(LogType.ERROR, `***MQTT connection error: ${err.message}`);
-        client.end();
-      });
-    });
-  },
-  async remove(entityType, _prefix, vin, code) {
-    var topic = `homeassistant/${entityType.toLowerCase()}/${_prefix}_${vin.toLowerCase()}${code ? "_" + code.toLowerCase() : ""}/config`;
-    mqttModule.sendMqtt(topic, null, { retain: false });
-
-    topic = `homeassistant/${entityType.toLowerCase()}/${_prefix}_${vin.toLowerCase()}${code ? "_" + code : ""}/config`;
-    mqttModule.sendMqtt(topic, null, { retain: false });
-
-    var legacyTopic = `homeassistant/sensor/${_prefix}_${vin.toLowerCase()}${code ? "_" + code.toLowerCase() : ""}/config`;
-    mqttModule.sendMqtt(legacyTopic, null, { retain: false });
-
-    legacyTopic = `homeassistant/sensor/${_prefix}_${vin.toLowerCase()}${code ? "_" + code : ""}/config`;
-    mqttModule.sendMqtt(legacyTopic, null, { retain: false });
-  },
-  async register(entityType, vin, code, entity_name, unit = null, device_class = "None", icon = null, actionable = false, initial_value = null, state_class = null) {
-
-    const slugName = slugify(entity_name.toLowerCase().replace("-", "_"), "_");
-    var topic = `homeassistant/${entityType.toLowerCase()}/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/config`;
-
-    let payload = {
-      unique_id: `${prefix}_${vin.toLowerCase()}_${slugName}`,
-      default_entity_id: `${entityType.toLowerCase()}.${prefix}_${vin.toLowerCase()}_${slugName}`,
-      name: entity_name,
-      device: {
-        "identifiers": [`${vin.toUpperCase()}`],
-        "name": `${vin.toUpperCase()}`,
-        "model": "BR",
-        "manufacturer": "GWM",
-      }
-    };
-
-    if (entityType === EntityType.IMAGE) {
-      payload.url_topic = `${prefix}_${vin.toLowerCase()}/${code.toLowerCase()}/state`;
-    }
-    if ([EntityType.SENSOR, EntityType.BINARY_SENSOR].includes(entityType)) {
-      if (device_class !== "None") payload.device_class = device_class;
-      payload.state_topic = `${prefix}_${vin.toLowerCase()}/${code.toLowerCase()}/state`;
-
-      if (entityType === EntityType.BINARY_SENSOR) {
-        payload.payload_on = "1";
-        payload.payload_off = "0";
-      }
-    }
-
-    if ([EntityType.SENSOR, EntityType.BINARY_SENSOR, EntityType.SWITCH, EntityType.BUTTON, EntityType.SELECT].includes(entityType) && icon) {
-      payload.icon = icon;
-    }
-
-    if (entityType === EntityType.SENSOR && unit !== null && !["-", " ", "_", "", "None", "null"].includes(unit)) {
-      payload.unit_of_measurement = unit;
-    }
-
-    if (entityType === EntityType.SENSOR && state_class !== null && !["-", " ", "_", "", "None", "null"].includes(unit)) {
-      payload.state_class = state_class;
-      payload.json_attributes_topic = `homeassistant/${entityType.toLowerCase()}/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/attributes`;
-    }
-
-    if (entityType === EntityType.DEVICE_TRACKER) {
-      topic = `homeassistant/device_tracker/${prefix}_${vin.toLowerCase()}/config`;
-      payload.unique_id = `${prefix}_${vin.toLowerCase()}`;
-      payload.default_entity_id = `${entityType.toLowerCase()}.${prefix}_${vin.toLowerCase()}`;
-      payload.json_attributes_topic = `homeassistant/device_tracker/${prefix}_${vin.toLowerCase()}/attributes`;
-    }
-
-    if (entityType === EntityType.SWITCH) {
-      topic = `homeassistant/switch/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/config`;
-      payload.command_topic = `homeassistant/switch/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/state`;
-      payload.state_topic = `homeassistant/switch/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/state`;
-      payload.optimistic = 'true';
-      payload.payload_on = 'ON';
-      payload.payload_off = 'OFF';
-    }
-
-    if (entityType === EntityType.BUTTON) {
-      topic = `homeassistant/button/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/config`;
-      payload.command_topic = `homeassistant/button/${prefix}_${vin.toLowerCase()}_${code.toLowerCase()}/press`;
-      payload.payload_press = 'PRESS';
-    }
-
-    if (entityType === EntityType.SELECT) {
-      topic = `homeassistant/select/${code.toLowerCase()}/config`;
-      payload.command_topic = `homeassistant/select/${code.toLowerCase()}/state`;
-      payload.state_topic = `homeassistant/select/${code.toLowerCase()}/state`;
-      payload.options = initial_value;
-      payload.unique_id = `${code.toLowerCase()}`;
-      payload.default_entity_id = `${entityType.toLowerCase()}.${code.toLowerCase()}`;
-    }
-
-    mqttModule.sendMqtt(topic, JSON.stringify(payload), { retain: true });
-
-    if (!Array.isArray(actionable) && String(actionable) !== "Y") actionable = [actionable];
-
-    if (String(actionable) !== "Y") {
-      actionable.forEach((actionableItem) => {
-        if (actionableItem && PIN) {
-          if (actionableItem.entity_type) {
-            let topicToMonitorParent = payload.state_topic ? payload.state_topic : payload.command_topic;
-            topicsToSubscribe[`${entityType}_${vin.toLowerCase()}_${code.toLowerCase()}`] = { topic: topicToMonitorParent };
-            topicsAndActions[`${actionableItem.entity_type}_${vin.toLowerCase()}_${code.toLowerCase()}_${actionableItem.action.toLowerCase()}`] = {
-              action: actionableItem.action,
-              topic_to_monitor_parent: topicToMonitorParent,
-              topic_to_monitor_actionable: "",
-              parent_attributes: actionableItem.parent_attributes && actionableItem.parent_attributes === "Y" ? payload.json_attributes_topic : "",
-              link_type: actionableItem.link_type,
-              vin: vin
-            };
-
-            mqttModule.register(EntityType[actionableItem.entity_type.toUpperCase()],
-              vin,
-              `${code.toLowerCase()}_${actionableItem.action.toLowerCase()}`,
-              actionableItem.description,
-              null,
-              "None",
-              actionableItem.icon,
-              "Y",
-              null,
-              null);
-          }
-        }
-      });
-    }
-    else if (String(actionable) === "Y") {
-      if (topicsAndActions[`${entityType}_${vin.toLowerCase()}_${code.toLowerCase()}`] && payload.command_topic) {
-        topicsToSubscribe[`${entityType}_${vin.toLowerCase()}_${code.toLowerCase()}`] = { topic: payload.command_topic };
-        topicsAndActions[`${entityType}_${vin.toLowerCase()}_${code.toLowerCase()}`].topic_to_monitor_actionable = payload.command_topic;
-        topicsAndActions[`${entityType}_${vin.toLowerCase()}_${code.toLowerCase()}`].topic_to_update = payload.command_topic;
-      }
-    }
-
-    storage.setItem('topicsAndActions', JSON.stringify(topicsAndActions));
-    storage.setItem('topicsToSubscribe', JSON.stringify(topicsToSubscribe));
-  },
-  sendDeviceTrackerUpdate(vin, latitude, longitude, attributes) {
-    const json_attributes_topic = `homeassistant/device_tracker/${prefix}_${vin.toLowerCase()}/attributes`;
-    const gpsData = {
-      longitude: Number(longitude),
-      latitude: Number(latitude),
-      gps_accuracy: 60
-    }
-
-    const attributesPayload = Object.assign({}, gpsData, attributes);
-
-    mqttModule.sendMqtt(json_attributes_topic, JSON.stringify(attributesPayload), { retain: false });
-  },
-  sendMessage(vin, code, value, retain = true) {
-    const topic = `${prefix}_${vin.toLowerCase()}/${code.toLowerCase()}/state`;
-
-    mqttModule.sendMqtt(topic, String(value), { retain });
-  },
-};
-
-const ActionableAndLink = {
-  onActionExecutedCallback: null,
-  onActionExecuted(cb) {
-    this.onActionExecutedCallback = cb;
-  },
-  execute() {
-    const client = mqttModule.connect();
-
-    client.on('connect', () => {
-      Object.keys(topicsToSubscribe).forEach(function (key) {
-
-        client.subscribe(String(topicsToSubscribe[key].topic), (err) => {
-          if (err) {
-            printLog(LogType.ERROR, `***Error subscribing to topic [${String(topicsToSubscribe[key].topic)}]: ${err.message}`);
-          }
-        });
-      });
-
-      client.on('message', async (topic, message) => {
-        let messageValue = message.toString().toUpperCase();
-
-        Object.keys(topicsAndActions).forEach(async function (key) {
-          if (topic === String(topicsAndActions[key].topic_to_monitor_actionable)) {
-            if (storage.getItem('Startup') == "true") return;
-
-            const actions = {
-              airConditioner: async () => {
-                return await carConnector.carUtil.airConditioner(carConnector.Actions.AirCon.TURN_ON, topicsAndActions[key].vin);
-              },
-              engineOn: async () => {
-                return await carConnector.carUtil.engine(carConnector.Actions.Engine.TURN_ON, topicsAndActions[key].vin);
-              },
-              engineOff: async () => {
-                return await carConnector.carUtil.engine(carConnector.Actions.Engine.TURN_OFF, topicsAndActions[key].vin);
-              },
-              trunkOpen: async () => {
-                return await carConnector.carUtil.trunk(carConnector.Actions.Doors.OPEN, topicsAndActions[key].vin);
-              },
-              trunkClose: async () => {
-                return await carConnector.carUtil.trunk(carConnector.Actions.Doors.CLOSE, topicsAndActions[key].vin);
-              },
-              doorsOpen: async () => {
-                return await carConnector.carUtil.doors(carConnector.Actions.Doors.OPEN, topicsAndActions[key].vin);
-              },
-              doorsClose: async () => {
-                return await carConnector.carUtil.doors(carConnector.Actions.Doors.CLOSE, topicsAndActions[key].vin);
-              },
-              windowsOpen: async () => {
-                return await carConnector.carUtil.windows(carConnector.Actions.Windows.OPEN, topicsAndActions[key].vin);
-              },
-              windowsClose: async () => {
-                return await carConnector.carUtil.windows(carConnector.Actions.Windows.CLOSE, topicsAndActions[key].vin);
-              },
-              skyWindowOpen: async () => {
-                return await carConnector.carUtil.skyWindow(carConnector.Actions.SkyWindow.OPEN, topicsAndActions[key].vin);
-              },
-              skyWindowClose: async () => {
-                return await carConnector.carUtil.skyWindow(carConnector.Actions.SkyWindow.CLOSE, topicsAndActions[key].vin);
-              },
-              chargingLogs: async () => {
-                const list = await carConnector.carData.getChargingLogs(topicsAndActions[key].vin);
-                if (list && list.length > 0 && topicsAndActions[key].parent_attributes) {
-                  const json_attributes_topic = topicsAndActions[key].parent_attributes;
-
-                  const last_update = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', });
-                  const attributesPayload = {
-                    charging_logs: list,
-                    last_update: last_update
-                  };
-                  mqttModule.sendMqtt(json_attributes_topic, JSON.stringify(attributesPayload), { retain: false });
-                }
-                else {
-                  mqttModule.sendMqtt(json_attributes_topic, JSON.stringify({ charging_logs: "", last_update: last_update }), { retain: false });
-                }
-              },
-              stopCharging: async () => {
-                return await carConnector.carUtil.stopCharging(topicsAndActions[key].vin);
-              },
-            };
-
-            const SendStatusMessage = (vin, data) => {
-              try {
-                if (data && data.message) {
-                  const formattedMessage = data.message.replace(/(\r\n|\n|\r)/g, " | ");
-                  mqttModule.sendMessage(vin, "status_message", formattedMessage);
-                }
-              } catch (e) {
-                printLog(LogType.ERROR, `***Error formatting status message: ${e.message}`);
-              }
-            };
-
-            const action = actions[String(topicsAndActions[key].action)];
-            if (action && String(messageValue) === (String(topicsAndActions[key].link_type) === "press" ? 'PRESS' : 'ON')) {
-              try {
-                const data = await action();
-                if (data && data.result === false) {
-                  if (data.error) {
-                    throw new Error(data.message);
-                  }
-                  if (data.message) {
-                    SendStatusMessage(topicsAndActions[key].vin, data);
-                  }
-                  return;
-                }
-
-                if (data) SendStatusMessage(topicsAndActions[key].vin, data);
-
-                if (typeof ActionableAndLink.onActionExecutedCallback === "function") {
-                  ActionableAndLink.onActionExecutedCallback();
-                }
-              } catch (e) {
-                printLog(LogType.ERROR, `***Error executing action [${String(topicsAndActions[key].action)}]***: ${e.message}`);
-                SendStatusMessage(topicsAndActions[key].vin, `Erro executando comando \"${String(topicsAndActions[key].action)}\".`);
-              }
-            }
-          }
-          else if (topic === String(topicsAndActions[key].topic_to_monitor_parent) && topicsAndActions[key].link_type && ["sync", "toggle"].includes(String(topicsAndActions[key].link_type))) {
-            try {
-              if (messageValue === "0" || messageValue === "OFF" || messageValue === "FALSE") {
-                mqttModule.sendMqtt(String(topicsAndActions[key].topic_to_update),
-                  String(topicsAndActions[key].link_type) === "sync" ? 'OFF' : String(topicsAndActions[key].link_type) === "toggle" ? 'ON' : 'OFF',
-                  { retain: false });
-              }
-              else {
-                mqttModule.sendMqtt(String(topicsAndActions[key].topic_to_update),
-                  String(topicsAndActions[key].link_type) === "sync" ? 'ON' : String(topicsAndActions[key].link_type) === "toggle" ? 'OFF' : 'ON',
-                  { retain: false });
-              }
-            }
-            catch (e) {
-              printLog(LogType.ERROR, `***Error executing the parent and child status sync/toggle.***`)
-              printLog(LogType.ERROR, `Parent topic: ${String(topicsAndActions[key].topic_to_monitor_parent)}`);
-              printLog(LogType.ERROR, `Child topic: ${String(topicsAndActions[key].topic_to_update)}`);
-              printLog(LogType.ERROR, e.message);
-            }
-          }
-        });
-      });
-    });
-
-    client.on('error', (e) => {
-      printLog(LogType.ERROR, `***Error on MQTT [ActionableAndLink] connection: ${e.message}`);
-    });
-  }
+/** slug follows the upstream entity naming: no accents, no "()-", words joined by "_". */
+function slug(text) {
+  return String(text)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[()-]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
 }
 
-module.exports = { mqttModule, EntityType, ActionableAndLink };
+function topics(vehicleId) {
+  const base = `${PREFIX}/${vehicleId}`;
+  return {
+    base,
+    availability: `${base}/availability`,
+    snapshot: `${base}/snapshot`,
+    state: (key) => `${base}/${key}/state`,
+    attributes: (key) => `${base}/${key}/attributes`,
+    discovery: (component, key) => `homeassistant/${component}/${PREFIX}/${vehicleId}_${key}/config`,
+  };
+}
+
+const HIDDEN = new Set(["-", " ", "_", "", "None", "null"]);
+
+// Entities that are not in map.js.
+const EXTRA_ENTITIES = Object.freeze([
+  { key: "hyengsts", component: "sensor", name: "Estado do Motor", icon: "mdi:engine" },
+  { key: "model", component: "sensor", name: "Modelo do veículo", icon: "mdi:car-estate" },
+  { key: "color", component: "sensor", name: "Cor do veículo", icon: "mdi:palette" },
+  { key: "tankcapacity", component: "sensor", name: "Capacidade do tanque", icon: "mdi:gas-station", unit: "L" },
+  { key: "enginetype", component: "sensor", name: "Tipo de motor", icon: "mdi:engine" },
+  { key: "status_message", component: "sensor", name: "Status Message", icon: "mdi:message-text" },
+  { key: "charging_history", component: "sensor", name: "Histórico de carregamento", icon: "mdi:clipboard-text-clock", attributes: true },
+  { key: "reader_error", component: "sensor", name: "Erro do leitor", icon: "mdi:alert-circle", attributes: true, category: "diagnostic" },
+]);
+
+/** discoveryMessages returns the retained discovery configs for one vehicle. */
+function discoveryMessages({ vehicleId, model, trackerEnabled = false }) {
+  const t = topics(vehicleId);
+  const device = { identifiers: [`${PREFIX}_${vehicleId}`], name: `GWM ${model || vehicleId}`, manufacturer: "GWM", model: model || "BR" };
+  const common = { availability_topic: t.availability, payload_available: "online", payload_not_available: "offline", device };
+  const out = [];
+
+  const entity = ({ key, component, name, unit, device_class, state_class, icon, attributes, category }) => {
+    const id = `${PREFIX}_${vehicleId}_${slug(name)}`;
+    const payload = { ...common, unique_id: id, default_entity_id: `${component}.${id}`, name, state_topic: t.state(key) };
+    if (icon) payload.icon = icon;
+    if (device_class && device_class !== "None") payload.device_class = device_class;
+    if (component === "binary_sensor") Object.assign(payload, { payload_on: "1", payload_off: "0" });
+    if (component === "sensor" && unit && !HIDDEN.has(unit)) {
+      payload.unit_of_measurement = unit;
+      if (state_class) payload.state_class = state_class;
+    }
+    if (attributes) payload.json_attributes_topic = t.attributes(key);
+    if (category) payload.entity_category = category;
+    out.push({ topic: t.discovery(component, key), payload });
+  };
+
+  for (const [code, info] of Object.entries(sensorTopics)) {
+    entity({ key: code, component: info.entity_type, name: info.description, unit: info.unit, device_class: info.device_class, state_class: info.state_class, icon: info.icon });
+  }
+  for (const e of EXTRA_ENTITIES) entity(e);
+
+  if (trackerEnabled) {
+    const id = `${PREFIX}_${vehicleId}_location`;
+    out.push({
+      topic: t.discovery("device_tracker", "location"),
+      payload: { ...common, unique_id: id, default_entity_id: `device_tracker.${id}`, name: "Localização", source_type: "gps", json_attributes_topic: t.attributes("location") },
+    });
+  }
+  return out;
+}
+
+/**
+ * createPublisher opens the single publish-only connection. connect is
+ * injectable for tests; the returned object has no subscribe method.
+ */
+function createPublisher({ url, username, password, vehicleId, log, connect = mqtt.connect, connectTimeoutMs = 30_000 }) {
+  if (!VEHICLE_ID.test(vehicleId)) throw new Error("VEHICLE_ID must match ^[a-z0-9][a-z0-9_]{0,31}$");
+  const t = topics(vehicleId);
+  const stats = { published_total: 0, publish_errors_total: 0 };
+  const client = connect(url, {
+    username,
+    password,
+    clientId: `gwm-reader-${vehicleId}`,
+    clean: true,
+    protocolVersion: 5,
+    reconnectPeriod: 5_000,
+    connectTimeout: connectTimeoutMs,
+    will: { topic: t.availability, payload: Buffer.from("offline"), qos: 1, retain: true },
+  });
+  client.on("error", (err) => log?.warn("mqtt error", { error_class: "mqtt", message: err?.message }));
+  client.on("reconnect", () => log?.debug("mqtt reconnecting"));
+
+  function ready() {
+    if (client.connected) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("mqtt connect timed out")), connectTimeoutMs);
+      client.once("connect", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+
+  function publish(topic, payload, { retain = false } = {}) {
+    const body = typeof payload === "string" || Buffer.isBuffer(payload) ? payload : JSON.stringify(payload);
+    return new Promise((resolve, reject) => {
+      client.publish(topic, body, { qos: 1, retain }, (err) => {
+        if (err) {
+          stats.publish_errors_total += 1;
+          reject(err);
+        } else {
+          stats.published_total += 1;
+          resolve();
+        }
+      });
+    });
+  }
+
+  function end() {
+    return new Promise((resolve) => client.end(false, {}, () => resolve()));
+  }
+
+  return { topics: t, ready, publish, end, stats };
+}
+
+module.exports = { EXTRA_ENTITIES, PREFIX, VEHICLE_ID, createPublisher, discoveryMessages, slug, topics };

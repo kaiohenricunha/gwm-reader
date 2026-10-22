@@ -1,9 +1,6 @@
-const axios = require("axios");
-const { LogType, printLog } = require('./utils');
 
 const UserMessages = (type) => ({
         NO_ALERTS: type === "text" ? "Não há alertas neste momento." : "NO_ALERTS",
-        ERR_FORMATTING_ADDRESS: type === "text" ? "Erro ao formatar endereço." : "ERR_FORMATTING_ADDRESS",
         ERR_GENERATE_RESPONSE: type === "text" ? "Desculpe, houve um erro ao gerar a resposta." : "ERR_GENERATE_RESPONSE",
         ALERT_HIGH_VOLTAGE_DISCONNECT: type === "text" ? "A bateria de alta tensão do veículo já está totalmente carregada e o carregador deve ser desconectado." : "ALERT_HIGH_VOLTAGE_DISCONNECT",
         SUNROOF_OPEN: type === "text" ? "O teto solar está aberto." : "SUNROOF_OPEN",
@@ -137,30 +134,4 @@ function getVehicleStatusHardAnalysis(content) {
         return statusMessage.join("\n");
 }
 
-async function getformattedAddress(lat, lon) {
-        const endpoint = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
-
-        try {
-                const response = await axios.get(endpoint, { headers: { "User-Agent": "haval-mqtt" } });
-                const address = response?.data?.address;
-                if (!address) return null;
-
-                const parts = [];
-                const roadName = address.road || response?.data?.name || null;
-                if (roadName) {
-                        parts.push(address.house_number ? `${roadName}, ${address.house_number}` : roadName);
-                }
-                if (address.suburb) parts.push(address.suburb);
-                if (address.city_district) parts.push(address.city_district);
-                if (address.city) parts.push(address.city);
-                if (address.postcode) parts.push(address.postcode);
-
-                return parts.join(", ");
-        }
-        catch (e) {
-                printLog(LogType.ERROR, `${UserMessages("text").ERR_FORMATTING_ADDRESS} Info: ${e.message}`);
-                return null;
-        }
-}
-
-module.exports = { getVehicleStatusHardAnalysis, getformattedAddress, UserMessages };
+module.exports = { getVehicleStatusHardAnalysis, UserMessages };
